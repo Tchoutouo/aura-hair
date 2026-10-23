@@ -3,9 +3,16 @@
 import { useState } from "react";
 import { fmtFcfa, fmtUsd } from "@/lib/pricing";
 import { CLOSURE_SIZES, LENGTHS, type Config, type PriceRow } from "@/lib/types";
-import type { StoredOrder } from "@/lib/store";
+import type { StoredOrder, StoredRequest } from "@/lib/store";
 
-type Tab = "orders" | "prices" | "settings";
+type Tab = "orders" | "requests" | "prices" | "settings";
+
+const SUBJECTS: Record<StoredRequest["subject"], string> = {
+  products: "Achat d'autres articles",
+  visa: "Visa Vietnam",
+  exchange: "Change de devises",
+  other: "Autre",
+};
 
 const input = "h-9 w-full rounded-md border border-line bg-white px-2 text-sm";
 
@@ -74,10 +81,12 @@ function PriceGrid({
 export default function AdminDashboard({
   initialConfig,
   orders,
+  requests,
   storageReady,
 }: {
   initialConfig: Config;
   orders: StoredOrder[];
+  requests: StoredRequest[];
   storageReady: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("orders");
@@ -131,6 +140,7 @@ export default function AdminDashboard({
         {(
           [
             ["orders", `Commandes (${orders.length})`],
+            ["requests", `Demandes (${requests.length})`],
             ["prices", "Prix fournisseurs"],
             ["settings", "Réglages"],
           ] as [Tab, string][]
@@ -145,7 +155,7 @@ export default function AdminDashboard({
         ))}
       </div>
 
-      {tab !== "orders" && (
+      {(tab === "prices" || tab === "settings") && (
         <div className="sticky top-20 z-20 mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-ivory/95 p-3 backdrop-blur">
           <button onClick={save} disabled={!dirty} className="rounded-full bg-plum px-5 py-2 text-sm font-semibold text-gold-soft disabled:opacity-40">
             Enregistrer les modifications
@@ -167,6 +177,7 @@ export default function AdminDashboard({
                   <span className={`mr-2 rounded-full px-2 py-0.5 text-xs font-semibold ${o.mode === "gros" ? "bg-gold text-ink" : "bg-plum text-gold-soft"}`}>
                     {o.mode === "gros" ? "Gros" : "Détail"}
                   </span>
+                  {o.lang === "en" && <span className="mr-2 rounded-full border border-line px-2 py-0.5 text-xs font-semibold">EN</span>}
                   {fmtFcfa(o.quote.totalFcfa)} · {new Date(o.createdAt).toLocaleString("fr-FR")}
                 </span>
               </summary>
@@ -191,6 +202,35 @@ export default function AdminDashboard({
                   <strong>{fmtFcfa(o.quote.totalFcfa)}</strong> (taux {o.rate})
                 </p>
                 {o.customer.note && <p className="italic">Note : {o.customer.note}</p>}
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
+
+      {tab === "requests" && (
+        <div className="mt-6 space-y-3">
+          {!requests.length && <p className="text-muted">Aucune demande pour l&apos;instant.</p>}
+          {requests.map((r) => (
+            <details key={r.id} className="rounded-xl border border-line bg-white p-4">
+              <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2">
+                <span className="font-semibold text-plum">
+                  {SUBJECTS[r.subject] ?? r.subject} – {r.name}
+                </span>
+                <span className="text-sm text-muted">
+                  {r.lang === "en" && <span className="mr-2 rounded-full border border-line px-2 py-0.5 text-xs font-semibold">EN</span>}
+                  {r.id}, {new Date(r.createdAt).toLocaleString("fr-FR")}
+                </span>
+              </summary>
+              <div className="mt-3 space-y-2 text-sm">
+                <p>
+                  Tél. :{" "}
+                  <a className="text-plum underline" href={`https://wa.me/${r.phone.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer">
+                    {r.phone}
+                  </a>
+                  {r.email ? `, ${r.email}` : ""}
+                </p>
+                <p className="whitespace-pre-wrap">{r.message}</p>
               </div>
             </details>
           ))}
@@ -245,6 +285,7 @@ export default function AdminDashboard({
                 ["Marge gros (USD par paquet/pièce)", cfg.margins.gros, (v: number) => update((c) => ((c.margins.gros = v), c))],
                 ["Marge détail (USD par paquet/pièce)", cfg.margins.detail, (v: number) => update((c) => ((c.margins.detail = v), c))],
                 ["Poids d'un paquet (g)", cfg.bundleWeightG, (v: number) => update((c) => ((c.bundleWeightG = v), c))],
+                ["Montage de perruque au Vietnam (USD, sans marge)", cfg.mountingFeeUsd, (v: number) => update((c) => ((c.mountingFeeUsd = v), c))],
               ] as [string, number, (v: number) => void][]
             ).map(([label, value, set]) => (
               <label key={label} className="block text-sm">

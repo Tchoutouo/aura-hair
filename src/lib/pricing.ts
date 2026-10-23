@@ -10,6 +10,7 @@ import {
   type Mode,
   type Quality,
 } from "./types";
+import { getDict, type Lang } from "@/i18n";
 
 const idx = (length: Length) => LENGTHS.indexOf(length);
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -56,13 +57,14 @@ export function closurePrice(
   return base == null ? null : base + config.margins[mode];
 }
 
-export const colorLabel = (c: "natural" | "light") =>
-  c === "natural" ? "Couleur naturelle" : "Couleur claire (gray, blonde, 27, 613…)";
+export const colorLabel = (lang: Lang, c: "natural" | "light") =>
+  c === "natural" ? getDict(lang).pricing.colorNatural : getDict(lang).pricing.colorLight;
 
-export const closureLabel = (size: ClosureSize) =>
-  size.startsWith("13") ? `Frontal ${size}` : `Closure ${size}`;
+export const closureLabel = (lang: Lang, size: ClosureSize) =>
+  size.startsWith("13") ? getDict(lang).pricing.frontal(size) : getDict(lang).pricing.closure(size);
 
-export function quoteItem(config: Config, mode: Mode, item: CartItem): ItemQuote {
+export function quoteItem(config: Config, mode: Mode, item: CartItem, lang: Lang = "fr"): ItemQuote {
+  const t = getDict(lang).pricing;
   const qty = Math.max(1, Math.floor(item.qty || 1));
   const fail = (title: string, error: string): ItemQuote => ({
     ok: false,
@@ -75,15 +77,15 @@ export function quoteItem(config: Config, mode: Mode, item: CartItem): ItemQuote
   });
 
   if (item.kind === "closure") {
-    const fam = item.family === "virgin" ? "Virgin" : "Single Donor";
-    const title = `${closureLabel(item.size)} ${item.length}" – ${fam}`;
+    const fam = item.family === "virgin" ? t.virgin : t.singleDonor;
+    const title = `${closureLabel(lang, item.size)} ${item.length}" – ${fam}`;
     const p = closurePrice(config, mode, item.family, item.size, item.length);
-    if (p == null) return fail(title, "Taille non disponible pour cette longueur – sur demande.");
+    if (p == null) return fail(title, t.sizeUnavailable);
     const w = config.closureWeightG[item.size] ?? 50;
     return {
       ok: true,
       title,
-      lines: [{ label: closureLabel(item.size), detail: `${item.length}"`, unitUsd: p, qty, totalUsd: r2(p * qty) }],
+      lines: [{ label: closureLabel(lang, item.size), detail: `${item.length}"`, unitUsd: p, qty, totalUsd: r2(p * qty) }],
       count: 1,
       usd: r2(p * qty),
       weightG: w * qty,
@@ -91,19 +93,19 @@ export function quoteItem(config: Config, mode: Mode, item: CartItem): ItemQuote
   }
 
   const quality = findQuality(config, item.quality);
-  if (!quality) return fail("Produit inconnu", "Qualité introuvable.");
+  if (!quality) return fail(t.unknownProduct, t.unknownQuality);
 
   if (item.kind === "bundle") {
-    const title = `Mèches ${quality.name} – ${item.texture} ${item.length}"`;
+    const title = t.bundleTitle(quality.name, item.texture, item.length);
     const p = bundlePrice(config, mode, quality, item.length, item.color);
-    if (p == null) return fail(title, "Longueur non disponible.");
+    if (p == null) return fail(title, t.lengthUnavailable);
     return {
       ok: true,
       title,
       lines: [
         {
-          label: `Paquet de mèches (100 g)`,
-          detail: `${item.length}" · ${colorLabel(item.color)}`,
+          label: t.bundleLine,
+          detail: `${item.length}" · ${colorLabel(lang, item.color)}`,
           unitUsd: p,
           qty,
           totalUsd: r2(p * qty),
@@ -116,14 +118,14 @@ export function quoteItem(config: Config, mode: Mode, item: CartItem): ItemQuote
   }
 
   // Wig
-  const title = `Perruque ${quality.name} – ${item.texture} ${item.length}"`;
+  const title = t.wigTitle(quality.name, item.texture, item.length);
   const p = bundlePrice(config, mode, quality, item.length, item.color);
-  if (p == null) return fail(title, "Longueur non disponible.");
+  if (p == null) return fail(title, t.lengthUnavailable);
   const n = bundlesForLength(config, item.length);
   const lines = [
     {
-      label: `Mèches : ${n.toString().replace(".", ",")} paquets`,
-      detail: `${item.length}" · ${colorLabel(item.color)}`,
+      label: t.wigBundles(n),
+      detail: `${item.length}" · ${colorLabel(lang, item.color)}`,
       unitUsd: p,
       qty: n,
       totalUsd: r2(p * n),
@@ -132,17 +134,20 @@ export function quoteItem(config: Config, mode: Mode, item: CartItem): ItemQuote
   let weight = config.bundleWeightG * n;
   if (item.closure) {
     const c = closurePrice(config, mode, quality.family, item.closure, item.length);
-    if (c == null)
-      return fail(title, `${closureLabel(item.closure)} non disponible en ${item.length}" – choisissez une autre taille.`);
-    lines.push({ label: closureLabel(item.closure), detail: `${item.length}"`, unitUsd: c, qty: 1, totalUsd: c });
+    if (c == null) return fail(title, t.closureUnavailable(closureLabel(lang, item.closure), item.length));
+    lines.push({ label: closureLabel(lang, item.closure), detail: `${item.length}"`, unitUsd: c, qty: 1, totalUsd: c });
     weight += config.closureWeightG[item.closure] ?? 50;
+  }
+  if (item.mounting && config.mountingFeeUsd > 0) {
+    const fee = config.mountingFeeUsd;
+    lines.push({ label: t.mounting, detail: t.mountingDetail, unitUsd: fee, qty: 1, totalUsd: fee });
   }
   const one = r2(lines.reduce((s, l) => s + l.totalUsd, 0));
   return { ok: true, title, lines, count: qty, usd: r2(one * qty), weightG: weight * qty };
 }
 
-export function quoteCart(config: Config, mode: Mode, items: CartItem[]): CartQuote {
-  const quotes = items.map((it) => quoteItem(config, mode, it));
+export function quoteCart(config: Config, mode: Mode, items: CartItem[], lang: Lang = "fr"): CartQuote {
+  const quotes = items.map((it) => quoteItem(config, mode, it, lang));
   const productsUsd = r2(quotes.reduce((s, q) => s + q.usd, 0));
   const weightG = quotes.reduce((s, q) => s + q.weightG, 0);
   const weightKg = Math.round(weightG) / 1000;
@@ -170,7 +175,7 @@ export const fmtFcfa = (n: number) =>
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " FCFA";
 
-export const fmtKg = (kg: number) => kg.toFixed(2).replace(".", ",") + " kg";
+export const fmtKg = (kg: number, lang: Lang = "fr") => getDict(lang).dec(Number(kg.toFixed(2))) + " kg";
 
 /**
  * Customer-facing copy of the config for one mode: margins are baked into every

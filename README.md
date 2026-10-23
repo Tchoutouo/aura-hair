@@ -9,8 +9,13 @@ commande envoyée sur WhatsApp et par e-mail, et page `/admin` protégée pour g
   (= vos fiches « +2 » et « +3 »). Les prix fournisseurs ne sont jamais envoyés au navigateur.
 - **Perruque (détail)** : jusqu'à 14" = 2 paquets, 16"–24" = 2,5 paquets, 26"–30" = 3 paquets, + la closure choisie.
 - **Couleur claire** : Single Donor = supplément par paquet (+3 / +8 / +15 $) ; Virgin = colonne de prix dédiée + marge.
+- **Montage de la perruque** (détail) : +10 $ par perruque, sans marge, réglable dans *Réglages*. Coché par défaut ;
+  la cliente peut choisir « Je la monte moi-même ».
 - **Transport** : poids total × 17 000 FCFA/kg (paquet = 100 g ; poids des closures réglable dans l'admin).
 - **Affichage** : USD et FCFA, au taux réglé dans l'admin (600 par défaut — à ajuster).
+
+Le site est en français (`/fr`) et en anglais (`/en`) ; un visiteur arrivant sur `/` est envoyé vers la langue de
+son navigateur. L'admin (`/admin`) reste en français et liste aussi les demandes du formulaire de contact.
 
 Tout se modifie dans `/admin` → *Prix fournisseurs* et *Réglages*.
 
@@ -31,7 +36,7 @@ Tout se modifie dans `/admin` → *Prix fournisseurs* et *Réglages*.
 
 ### Limites anti-abus (`src/lib/ratelimit.ts`)
 
-- 5 commandes par connexion (adresse IP) toutes les 10 minutes.
+- 5 commandes et 5 demandes de contact par connexion (adresse IP) toutes les 10 minutes.
 - 5 tentatives de connexion admin par IP toutes les 15 minutes.
 - Copie de commande au client (seulement si `RESEND_FROM` est défini) : 2 par adresse e-mail et par 24 h.
 
@@ -49,6 +54,8 @@ npm run dev                  # http://localhost:3000
 | --- | --- |
 | Prix, marges, taux, transport, numéros | `/admin` (ou valeurs par défaut dans `src/lib/defaults.ts`) |
 | Liste des textures | `src/lib/defaults.ts` + images dans `public/textures/` |
-| Textes de l'accueil | `src/app/page.tsx` |
+| Textes du site (français / anglais) | `src/i18n/fr.ts` et `src/i18n/en.ts` |
+| Mise en page de l'accueil | `src/app/[lang]/page.tsx` |
+| Photos et vidéos | fichiers dans `public/media/` + liste dans `src/lib/media.ts` + légendes dans `src/i18n/*.ts` (`media`) |
 | Logique de calcul | `src/lib/pricing.ts` |
 | Message WhatsApp / e-mail | `src/lib/order.ts` |

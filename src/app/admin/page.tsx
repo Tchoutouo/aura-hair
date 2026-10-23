@@ -1,11 +1,9 @@
-import type { Metadata } from "next";
 import { adminConfigured, isAdmin } from "@/lib/auth";
-import { getConfig, listOrders, storageReady } from "@/lib/store";
+import { getConfig, listOrders, listRequests, storageReady } from "@/lib/store";
 import AdminDashboard from "@/components/AdminDashboard";
 import LoginForm from "@/components/LoginForm";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Admin – Aura Hair", robots: { index: false } };
 
 export default async function AdminPage() {
   if (!adminConfigured()) {
@@ -20,6 +18,6 @@ export default async function AdminPage() {
     );
   }
   if (!(await isAdmin())) return <LoginForm />;
-  const [config, orders] = await Promise.all([getConfig(), listOrders()]);
-  return <AdminDashboard initialConfig={config} orders={orders} storageReady={storageReady()} />;
+  const [config, orders, requests] = await Promise.all([getConfig(), listOrders(), listRequests()]);
+  return <AdminDashboard initialConfig={config} orders={orders} requests={requests} storageReady={storageReady()} />;
 }

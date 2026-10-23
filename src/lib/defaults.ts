@@ -77,6 +77,7 @@ export const DEFAULT_CONFIG: Config = {
     { maxLength: 30, add: 15 },
   ],
   lightPriceVirgin: [20, 25, 28, 35, 45, 58, 65, 72, 81, 92, 103, 119, 132],
+  mountingFeeUsd: 10,
   contacts: [
     { label: "Cameroun", phone: "+237656464859" },
     { label: "Cameroun (2)", phone: "+237655447247" },

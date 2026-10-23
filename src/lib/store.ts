@@ -1,10 +1,12 @@
 import "server-only";
 import { Redis } from "@upstash/redis";
 import { DEFAULT_CONFIG } from "./defaults";
+import type { Lang } from "@/i18n";
 import type { CartItem, CartQuote, Config, Mode } from "./types";
 
 const CONFIG_KEY = "aura:config";
 const ORDERS_KEY = "aura:orders";
+const REQUESTS_KEY = "aura:requests";
 
 let client: Redis | null | undefined;
 
@@ -51,6 +53,7 @@ export interface StoredOrder {
   quote: CartQuote;
   contact: string;
   rate: number;
+  lang?: Lang;
 }
 
 export interface Customer {
@@ -75,6 +78,39 @@ export async function listOrders(): Promise<StoredOrder[]> {
     return (await db.lrange<StoredOrder>(ORDERS_KEY, 0, 99)) ?? [];
   } catch (e) {
     console.error("Redis listOrders failed", e);
+    return [];
+  }
+}
+
+export type RequestSubject = "products" | "visa" | "exchange" | "other";
+
+/** A message from the contact form (other services: purchases, visa, exchange…). */
+export interface StoredRequest {
+  id: string;
+  createdAt: string;
+  subject: RequestSubject;
+  name: string;
+  phone: string;
+  email?: string;
+  message: string;
+  contact: string;
+  lang: Lang;
+}
+
+export async function saveRequest(req: StoredRequest): Promise<void> {
+  const db = redis();
+  if (!db) return;
+  await db.lpush(REQUESTS_KEY, req);
+  await db.ltrim(REQUESTS_KEY, 0, 499);
+}
+
+export async function listRequests(): Promise<StoredRequest[]> {
+  const db = redis();
+  if (!db) return [];
+  try {
+    return (await db.lrange<StoredRequest>(REQUESTS_KEY, 0, 99)) ?? [];
+  } catch (e) {
+    console.error("Redis listRequests failed", e);
     return [];
   }
 }

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { getDict, type Dict, type Lang } from "@/i18n";
 import { TEXTURES, textureImage } from "@/lib/defaults";
 import {
   bundlePrice,
@@ -47,10 +48,10 @@ function Field({ label, children, hint }: { label: string; children: React.React
   );
 }
 
-function Stepper({ value, onChange, min = 1, label }: { value: number; onChange: (n: number) => void; min?: number; label: string }) {
+function Stepper({ value, onChange, min = 1, label, t }: { value: number; onChange: (n: number) => void; min?: number; label: string; t: Dict["order"] }) {
   return (
     <div className="inline-flex items-center rounded-lg border border-line bg-white">
-      <button type="button" aria-label={`Diminuer ${label}`} className="h-11 w-11 text-xl text-plum" onClick={() => onChange(Math.max(min, value - 1))}>
+      <button type="button" aria-label={`${t.decrease} ${label}`} className="h-11 w-11 text-xl text-plum" onClick={() => onChange(Math.max(min, value - 1))}>
         −
       </button>
       <input
@@ -60,14 +61,14 @@ function Stepper({ value, onChange, min = 1, label }: { value: number; onChange:
         value={value}
         onChange={(e) => onChange(Math.max(min, parseInt(e.target.value.replace(/\D/g, "") || String(min), 10)))}
       />
-      <button type="button" aria-label={`Augmenter ${label}`} className="h-11 w-11 text-xl text-plum" onClick={() => onChange(value + 1)}>
+      <button type="button" aria-label={`${t.increase} ${label}`} className="h-11 w-11 text-xl text-plum" onClick={() => onChange(value + 1)}>
         +
       </button>
     </div>
   );
 }
 
-function TexturePicker({ value, onChange }: { value: string; onChange: (t: string) => void }) {
+function TexturePicker({ value, onChange, t }: { value: string; onChange: (t: string) => void; t: Dict["order"] }) {
   const img = textureImage(value);
   return (
     <div className="flex items-center gap-3">
@@ -75,11 +76,11 @@ function TexturePicker({ value, onChange }: { value: string; onChange: (t: strin
         {img ? (
           <Image src={img} alt={value} width={128} height={128} className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full items-center justify-center text-[10px] font-semibold text-muted">LISSE</div>
+          <div className="flex h-full items-center justify-center text-[10px] font-semibold text-muted">{t.straight}</div>
         )}
       </div>
       <select
-        aria-label="Texture"
+        aria-label={t.texture}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="h-11 w-full rounded-lg border border-line bg-white px-3 font-semibold text-plum"
@@ -96,7 +97,7 @@ function QualityPicker({ config, value, onChange }: { config: Config; value: str
   return (
     <div className="grid gap-2 sm:grid-cols-3">
       {config.qualities.map((q) => (
-        <button key={q.id} type="button" onClick={() => onChange(q.id)} className={`${pill(value === q.id)} py-3 text-left`}>
+        <button key={q.id} type="button" aria-pressed={value === q.id} onClick={() => onChange(q.id)} className={`${pill(value === q.id)} py-3 text-left`}>
           <span className="block text-xs font-medium opacity-80">{q.family === "virgin" ? "Virgin" : "Single Donor"}</span>
           {q.name.split("–")[1]?.trim() ?? q.name}
         </button>
@@ -111,7 +112,7 @@ function LengthPicker({ value, onChange, isAvailable }: { value: Length; onChang
       {LENGTHS.map((l) => {
         const ok = isAvailable(l);
         return (
-          <button key={l} type="button" disabled={!ok} onClick={() => onChange(l)} className={pill(value === l, !ok)}>
+          <button key={l} type="button" disabled={!ok} aria-pressed={value === l} onClick={() => onChange(l)} className={pill(value === l, !ok)}>
             {l}&quot;
           </button>
         );
@@ -120,20 +121,21 @@ function LengthPicker({ value, onChange, isAvailable }: { value: Length; onChang
   );
 }
 
-function ColorPicker({ value, onChange }: { value: Color; onChange: (c: Color) => void }) {
+function ColorPicker({ value, onChange, t }: { value: Color; onChange: (c: Color) => void; t: Dict["order"] }) {
   return (
     <div className="flex flex-wrap gap-2">
-      <button type="button" onClick={() => onChange("natural")} className={pill(value === "natural")}>
-        Naturelle (noir / 1B)
+      <button type="button" aria-pressed={value === "natural"} onClick={() => onChange("natural")} className={pill(value === "natural")}>
+        {t.colorNatural}
       </button>
-      <button type="button" onClick={() => onChange("light")} className={pill(value === "light")}>
-        Claire : gray, blonde, 27, 613…
+      <button type="button" aria-pressed={value === "light"} onClick={() => onChange("light")} className={pill(value === "light")}>
+        {t.colorLight}
       </button>
     </div>
   );
 }
 
-export default function OrderBuilder({ prices, initialMode }: { prices: Prices; initialMode: Mode }) {
+export default function OrderBuilder({ prices, initialMode, lang }: { prices: Prices; initialMode: Mode; lang: Lang }) {
+  const t = getDict(lang).order;
   const [mode, setMode] = useState<Mode>(initialMode);
   const config = prices[mode];
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -144,6 +146,7 @@ export default function OrderBuilder({ prices, initialMode }: { prices: Prices; 
   const [length, setLength] = useState<Length>(18);
   const [closure, setClosure] = useState<ClosureSize | null>("5x5");
   const [color, setColor] = useState<Color>("natural");
+  const [mounting, setMounting] = useState(true);
   const [qty, setQty] = useState(initialMode === "gros" ? 10 : 1);
   const [grosTab, setGrosTab] = useState<"bundle" | "closure">("bundle");
   const [family, setFamily] = useState<Family>("single-donor");
@@ -153,21 +156,21 @@ export default function OrderBuilder({ prices, initialMode }: { prices: Prices; 
 
   const current: CartItem =
     mode === "detail"
-      ? { kind: "wig", quality, texture, length, closure, color, qty }
+      ? { kind: "wig", quality, texture, length, closure, color, mounting, qty }
       : grosTab === "bundle"
         ? { kind: "bundle", quality, texture, length, color, qty }
         : { kind: "closure", family, size, length, qty };
 
-  const currentQuote = quoteItem(config, mode, current);
-  const cartQuote = useMemo(() => quoteCart(config, mode, cart), [config, mode, cart]);
+  const currentQuote = quoteItem(config, mode, current, lang);
+  const cartQuote = useMemo(() => quoteCart(config, mode, cart, lang), [config, mode, cart, lang]);
 
   function switchMode(m: Mode) {
     if (m === mode) return;
-    if (cart.length && !window.confirm("Changer de type d'achat vide votre panier (les prix sont différents). Continuer ?")) return;
+    if (cart.length && !window.confirm(t.confirmSwitch)) return;
     setCart([]);
     setMode(m);
     setQty(m === "gros" ? 10 : 1);
-    window.history.replaceState(null, "", `/commander?mode=${m}`);
+    window.history.replaceState(null, "", `/${lang}/commander?mode=${m}`);
   }
 
   function addToCart() {
@@ -181,14 +184,11 @@ export default function OrderBuilder({ prices, initialMode }: { prices: Prices; 
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="font-display text-4xl font-bold text-plum md:text-5xl">Calculer mon prix</h1>
-      <p className="mt-2 max-w-3xl text-muted">
-        Le prix s&apos;affiche en direct, en dollars et en francs CFA. Le transport vers le Cameroun ({fmtFcfa(config.shippingFcfaPerKg)}/kg)
-        est calculé selon le poids et affiché à part.
-      </p>
+      <h1 className="font-display text-4xl font-bold text-plum md:text-5xl">{t.title}</h1>
+      <p className="mt-2 max-w-3xl text-muted">{t.lead(fmtFcfa(config.shippingFcfaPerKg))}</p>
 
       {/* Mode */}
-      <div role="tablist" aria-label="Type d'achat" className="mt-6 inline-flex rounded-full border-2 border-plum p-1">
+      <div role="tablist" aria-label={t.modeLabel} className="mt-6 inline-flex rounded-full border-2 border-plum p-1">
         {(["detail", "gros"] as Mode[]).map((m) => (
           <button
             key={m}
@@ -198,7 +198,7 @@ export default function OrderBuilder({ prices, initialMode }: { prices: Prices; 
             onClick={() => switchMode(m)}
             className={`rounded-full px-5 py-2 text-sm font-semibold ${mode === m ? "bg-plum text-gold-soft" : "text-plum"}`}
           >
-            {m === "detail" ? "Achat au détail" : "Achat en gros"}
+            {m === "detail" ? t.modeDetail : t.modeGros}
           </button>
         ))}
       </div>
@@ -207,94 +207,102 @@ export default function OrderBuilder({ prices, initialMode }: { prices: Prices; 
         {/* Builder */}
         <section className="space-y-7 rounded-2xl border border-line bg-white p-5 md:p-7">
           <h2 className="font-display text-2xl font-bold text-plum">
-            {mode === "detail" ? "Ma perruque" : "Ajouter des articles"}
+            {mode === "detail" ? t.myWig : t.addItems}
           </h2>
 
           {mode === "gros" && (
             <div className="flex gap-2">
-              <button type="button" className={pill(grosTab === "bundle")} onClick={() => setGrosTab("bundle")}>
-                Mèches (paquets)
+              <button type="button" aria-pressed={grosTab === "bundle"} className={pill(grosTab === "bundle")} onClick={() => setGrosTab("bundle")}>
+                {t.tabBundles}
               </button>
-              <button type="button" className={pill(grosTab === "closure")} onClick={() => setGrosTab("closure")}>
-                Closures &amp; frontals
+              <button type="button" aria-pressed={grosTab === "closure"} className={pill(grosTab === "closure")} onClick={() => setGrosTab("closure")}>
+                {t.tabClosures}
               </button>
             </div>
           )}
 
           {(mode === "detail" || grosTab === "bundle") && (
             <>
-              <Field label="Qualité">
+              <Field label={t.quality}>
                 <QualityPicker config={config} value={quality} onChange={setQuality} />
               </Field>
-              <Field label="Texture">
-                <TexturePicker value={texture} onChange={setTexture} />
+              <Field label={t.texture}>
+                <TexturePicker value={texture} onChange={setTexture} t={t} />
               </Field>
               <Field
-                label="Longueur de la mèche"
-                hint={
-                  mode === "detail"
-                    ? `Pour ${length}", il faut ${bundlesForLength(config, length).toString().replace(".", ",")} paquets de 100 g.`
-                    : undefined
-                }
+                label={t.length}
+                hint={mode === "detail" ? t.bundlesHint(length, bundlesForLength(config, length)) : undefined}
               >
                 <LengthPicker value={length} onChange={setLength} isAvailable={lengthOkBundle} />
               </Field>
               {mode === "detail" && (
-                <Field label="Closure ou frontal">
+                <Field label={t.closure}>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" className={pill(closure === null)} onClick={() => setClosure(null)}>
-                      Sans
+                    <button type="button" aria-pressed={closure === null} className={pill(closure === null)} onClick={() => setClosure(null)}>
+                      {t.none}
                     </button>
                     {CLOSURE_SIZES.map((s) => {
                       const ok = closurePrice(config, mode, q.family, s, length) != null;
                       return (
-                        <button key={s} type="button" disabled={!ok} className={pill(closure === s, !ok)} onClick={() => setClosure(s)}>
-                          {closureLabel(s)}
+                        <button key={s} type="button" disabled={!ok} aria-pressed={closure === s} className={pill(closure === s, !ok)} onClick={() => setClosure(s)}>
+                          {closureLabel(lang, s)}
                         </button>
                       );
                     })}
                   </div>
                 </Field>
               )}
-              <Field label="Couleur">
-                <ColorPicker value={color} onChange={setColor} />
+              <Field label={t.color}>
+                <ColorPicker value={color} onChange={setColor} t={t} />
               </Field>
+              {mode === "detail" && (
+                <Field label={t.mounting} hint={t.mountingHint}>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" aria-pressed={mounting} className={pill(mounting)} onClick={() => setMounting(true)}>
+                      {t.mountingYes(fmtUsd(config.mountingFeeUsd))}
+                    </button>
+                    <button type="button" aria-pressed={!mounting} className={pill(!mounting)} onClick={() => setMounting(false)}>
+                      {t.mountingNo}
+                    </button>
+                  </div>
+                </Field>
+              )}
             </>
           )}
 
           {mode === "gros" && grosTab === "closure" && (
             <>
-              <Field label="Qualité">
+              <Field label={t.quality}>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" className={pill(family === "single-donor")} onClick={() => setFamily("single-donor")}>
+                  <button type="button" aria-pressed={family === "single-donor"} className={pill(family === "single-donor")} onClick={() => setFamily("single-donor")}>
                     Single Donor
                   </button>
-                  <button type="button" className={pill(family === "virgin")} onClick={() => setFamily("virgin")}>
+                  <button type="button" aria-pressed={family === "virgin"} className={pill(family === "virgin")} onClick={() => setFamily("virgin")}>
                     Virgin
                   </button>
                 </div>
               </Field>
-              <Field label="Taille">
+              <Field label={t.size}>
                 <div className="flex flex-wrap gap-2">
                   {CLOSURE_SIZES.map((s) => (
-                    <button key={s} type="button" className={pill(size === s)} onClick={() => setSize(s)}>
-                      {closureLabel(s)}
+                    <button key={s} type="button" aria-pressed={size === s} className={pill(size === s)} onClick={() => setSize(s)}>
+                      {closureLabel(lang, s)}
                     </button>
                   ))}
                 </div>
               </Field>
-              <Field label="Longueur">
+              <Field label={t.lengthShort}>
                 <LengthPicker value={length} onChange={setLength} isAvailable={lengthOkClosure} />
               </Field>
             </>
           )}
 
-          <Field label={mode === "detail" ? "Nombre de perruques" : grosTab === "bundle" ? "Nombre de paquets" : "Nombre de pièces"}>
-            <Stepper value={qty} onChange={setQty} label="quantité" />
+          <Field label={mode === "detail" ? t.qtyWigs : grosTab === "bundle" ? t.qtyBundles : t.qtyPieces}>
+            <Stepper value={qty} onChange={setQty} label={t.qty} t={t} />
           </Field>
 
           {/* Live price of the current item */}
-          <div className="rounded-xl bg-sand p-5">
+          <div className="rounded-xl bg-sand p-5" aria-live="polite">
             {currentQuote.ok ? (
               <>
                 <ul className="space-y-1 text-sm">
@@ -304,20 +312,20 @@ export default function OrderBuilder({ prices, initialMode }: { prices: Prices; 
                         {l.label} <span className="text-muted">· {l.detail}</span>
                       </span>
                       <span className="font-semibold whitespace-nowrap">
-                        {l.qty !== 1 ? `${fmtUsd(l.unitUsd)} × ${l.qty.toString().replace(".", ",")} = ` : ""}
+                        {l.qty !== 1 ? `${fmtUsd(l.unitUsd)} × ${getDict(lang).dec(l.qty)} = ` : ""}
                         {fmtUsd(l.totalUsd)}
                       </span>
                     </li>
                   ))}
                   {currentQuote.count > 1 && (
                     <li className="flex justify-between text-muted">
-                      <span>× {currentQuote.count} perruques</span>
+                      <span>{t.timesWigs(currentQuote.count)}</span>
                     </li>
                   )}
                 </ul>
                 <div className="mt-3 flex flex-wrap items-end justify-between gap-2 border-t border-line pt-3">
                   <span className="text-sm text-muted">
-                    Produits ({fmtKg(currentQuote.weightG / 1000)}), hors transport
+                    {t.productsExcl(fmtKg(currentQuote.weightG / 1000, lang))}
                   </span>
                   <span className="text-right">
                     <span className="block font-display text-2xl font-bold text-plum">{fmtUsd(currentQuote.usd)}</span>
@@ -336,13 +344,14 @@ export default function OrderBuilder({ prices, initialMode }: { prices: Prices; 
             onClick={addToCart}
             className="w-full rounded-full bg-plum px-6 py-3 font-semibold text-gold-soft hover:bg-plum-2 disabled:opacity-40"
           >
-            Ajouter à ma commande
+            {t.add}
           </button>
         </section>
 
         {/* Cart + checkout */}
         <aside id="panier" className="scroll-mt-24 lg:sticky lg:top-24 lg:self-start">
           <Cart
+            lang={lang}
             config={config}
             mode={mode}
             cart={cart}
@@ -356,18 +365,21 @@ export default function OrderBuilder({ prices, initialMode }: { prices: Prices; 
 }
 
 function Cart({
+  lang,
   config,
   mode,
   cart,
   quote,
   onRemove,
 }: {
+  lang: Lang;
   config: Config;
   mode: Mode;
   cart: CartItem[];
   quote: ReturnType<typeof quoteCart>;
   onRemove: (i: number) => void;
 }) {
+  const t = getDict(lang).order;
   const [form, setForm] = useState({ name: "", phone: "", city: "", email: "", note: "" });
   const [contact, setContact] = useState(config.contacts[0]?.phone ?? "");
   const [status, setStatus] = useState<{ state: "idle" | "sending" | "done" | "error"; msg?: string; link?: string }>({ state: "idle" });
@@ -383,22 +395,22 @@ function Cart({
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, items: cart, customer: form, contact }),
+        body: JSON.stringify({ mode, items: cart, customer: form, contact, lang }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erreur");
+      if (!res.ok) throw new Error(data.error || t.error);
       setStatus({ state: "done", msg: data.id, link: data.whatsapp });
       window.location.href = data.whatsapp;
     } catch (err) {
-      setStatus({ state: "error", msg: err instanceof Error ? err.message : "Erreur" });
+      setStatus({ state: "error", msg: err instanceof Error ? err.message : t.error });
     }
   }
 
   return (
     <div className="space-y-5 rounded-2xl border-2 border-plum bg-white p-5">
-      <h2 className="font-display text-2xl font-bold text-plum">Ma commande</h2>
+      <h2 className="font-display text-2xl font-bold text-plum">{t.cartTitle}</h2>
       {!cart.length ? (
-        <p className="text-sm text-muted">Votre panier est vide. Configurez un article puis cliquez sur « Ajouter à ma commande ».</p>
+        <p className="text-sm text-muted">{t.cartEmpty}</p>
       ) : (
         <>
           <ul className="divide-y divide-line">
@@ -414,7 +426,7 @@ function Cart({
                 <div className="text-right">
                   <p className="font-semibold whitespace-nowrap">{fmtUsd(it.usd)}</p>
                   <button type="button" onClick={() => onRemove(i)} className="text-xs text-wine underline">
-                    Retirer
+                    {t.remove}
                   </button>
                 </div>
               </li>
@@ -422,16 +434,16 @@ function Cart({
           </ul>
           <dl className="space-y-2 rounded-xl bg-sand p-4 text-sm">
             <div className="flex justify-between gap-2">
-              <dt>Produits</dt>
+              <dt>{t.products}</dt>
               <dd className="text-right font-semibold">
                 {fmtUsd(quote.productsUsd)} <span className="text-muted">· {fmtFcfa(quote.productsFcfa)}</span>
               </dd>
             </div>
             <div className="flex justify-between gap-2">
               <dt>
-                Transport vers le Cameroun
+                {t.shipping}
                 <span className="block text-xs text-muted">
-                  {fmtKg(quote.weightKg)} × {fmtFcfa(config.shippingFcfaPerKg)}/kg
+                  {fmtKg(quote.weightKg, lang)} × {fmtFcfa(config.shippingFcfaPerKg)}/kg
                 </span>
               </dt>
               <dd className="text-right font-semibold">
@@ -439,25 +451,25 @@ function Cart({
               </dd>
             </div>
             <div className="flex items-end justify-between gap-2 border-t border-line pt-2">
-              <dt className="font-semibold text-plum">Total</dt>
+              <dt className="font-semibold text-plum">{t.total}</dt>
               <dd className="text-right">
                 <span className="block font-display text-2xl font-bold text-plum">{fmtFcfa(quote.totalFcfa)}</span>
                 <span className="text-sm font-semibold text-muted">{fmtUsd(quote.totalUsd)}</span>
               </dd>
             </div>
-            <p className="text-xs text-muted">Taux appliqué : 1 USD = {config.rateFcfaPerUsd} FCFA.</p>
+            <p className="text-xs text-muted">{t.rate(config.rateFcfaPerUsd)}</p>
           </dl>
         </>
       )}
 
       <form onSubmit={submit} className="space-y-3">
-        <p className="text-sm font-semibold tracking-wide text-rust">MES COORDONNÉES</p>
+        <p className="text-sm font-semibold text-rust">{t.details}</p>
         {(
           [
-            ["name", "Nom complet", "text", true],
-            ["phone", "Téléphone WhatsApp", "tel", true],
-            ["city", "Ville de livraison", "text", true],
-            ["email", "E-mail (pour recevoir une copie)", "email", false],
+            ["name", t.name, "text", true],
+            ["phone", t.phone, "tel", true],
+            ["city", t.city, "text", true],
+            ["email", t.email, "email", false],
           ] as const
         ).map(([k, label, type, req]) => (
           <label key={k} className="block text-sm">
@@ -475,11 +487,11 @@ function Cart({
           </label>
         ))}
         <label className="block text-sm">
-          <span className="font-medium text-ink">Précisions (facultatif)</span>
+          <span className="font-medium text-ink">{t.note}</span>
           <textarea value={form.note} onChange={set("note")} rows={2} className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2" />
         </label>
         <fieldset className="text-sm">
-          <legend className="font-medium text-ink">Envoyer ma commande au numéro</legend>
+          <legend className="font-medium text-ink">{t.sendTo}</legend>
           <div className="mt-1 space-y-1">
             {config.contacts.map((c) => (
               <label key={c.phone} className="flex items-center gap-2">
@@ -494,17 +506,14 @@ function Cart({
           disabled={!cart.length || !quote.ok || status.state === "sending"}
           className="flex w-full items-center justify-center gap-2 rounded-full bg-whatsapp px-6 py-3 font-semibold text-white hover:brightness-110 disabled:opacity-40"
         >
-          {status.state === "sending" ? "Envoi…" : "Valider ma commande sur WhatsApp"}
+          {status.state === "sending" ? t.sending : t.submit}
         </button>
-        <p className="text-xs leading-relaxed text-muted">
-          Nous achetons directement chez nos fournisseurs partenaires, vérifions les produits et payons nous-mêmes le
-          fournisseur. Rien n&apos;est payé en ligne : nous confirmons tout avec vous sur WhatsApp.
-        </p>
+        <p className="text-xs leading-relaxed text-muted">{t.reassure}</p>
         {status.state === "done" && status.link && (
           <p className="rounded-lg bg-sand p-3 text-sm">
-            Commande <strong>{status.msg}</strong> enregistrée. Si WhatsApp ne s&apos;est pas ouvert,{" "}
+            {t.done(status.msg ?? "")}{" "}
             <a href={status.link} className="font-semibold text-plum underline">
-              cliquez ici
+              {t.clickHere}
             </a>
             .
           </p>

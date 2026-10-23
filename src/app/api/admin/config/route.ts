@@ -46,6 +46,7 @@ function sanitize(input: Partial<Config>): Config {
       .map((r) => ({ maxLength: num(r.maxLength, 30), add: num(r.add, 0) }))
       .sort((a, b) => a.maxLength - b.maxLength),
     lightPriceVirgin: row(input.lightPriceVirgin, d.lightPriceVirgin),
+    mountingFeeUsd: num(input.mountingFeeUsd, d.mountingFeeUsd),
     contacts: (Array.isArray(input.contacts) && input.contacts.length ? input.contacts : d.contacts)
       .slice(0, 6)
       .map((c) => ({ label: String(c.label ?? "").slice(0, 40), phone: String(c.phone ?? "").replace(/[^\d+]/g, "").slice(0, 20) }))

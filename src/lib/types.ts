@@ -36,6 +36,8 @@ export interface Config {
   lightSurchargeSingleDonor: { maxLength: number; add: number }[];
   /** Virgin: full supplier price per bundle for light colours */
   lightPriceVirgin: PriceRow;
+  /** Wig making in Vietnam, USD per wig (no margin added) */
+  mountingFeeUsd: number;
   contacts: { label: string; phone: string }[];
   orderEmail: string;
   updatedAt?: string;
@@ -49,6 +51,8 @@ export type CartItem =
       length: Length;
       closure: ClosureSize | null;
       color: Color;
+      /** Wig made in Vietnam before shipping (adds mountingFeeUsd) */
+      mounting: boolean;
       qty: number;
     }
   | {
