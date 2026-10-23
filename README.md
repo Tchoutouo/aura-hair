@@ -1,4 +1,4 @@
-# Aura Hair – site de commande
+# Aurahair – site de commande
 
 Site Next.js : catalogue des textures, calculateur de prix (détail / gros) avec transport au poids,
 commande envoyée sur WhatsApp et par e-mail, et page `/admin` protégée pour gérer prix, réglages et commandes.

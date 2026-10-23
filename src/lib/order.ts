@@ -39,7 +39,6 @@ export function orderText(o: OrderSummaryInput, lang: Lang = "fr"): string {
   out.push(`${t.products} : ${money(q.productsUsd, q.productsFcfa)}`);
   out.push(`${t.shipping} : ${fmtFcfa(q.shippingFcfa)} (${fmtKg(q.weightKg, lang)} × ${fmtFcfa(o.shippingPerKg)}/kg)`);
   out.push(`*${t.total} : ${money(q.totalUsd, q.totalFcfa)}*`);
-  out.push(`(${t.rate} : 1 USD = ${o.rate} FCFA)`);
   if (o.customer.note) {
     out.push("");
     out.push(`${t.note} : ${o.customer.note}`);

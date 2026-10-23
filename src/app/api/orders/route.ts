@@ -104,7 +104,8 @@ export async function POST(req: Request) {
     Boolean(customer.email && process.env.RESEND_FROM) &&
     (await allow("customerEmail", customer.email!.toLowerCase()));
   await Promise.allSettled([
-    sendEmail(config.orderEmail, subject, text, customer.email),
+    // Only the shop sees the exchange rate.
+    sendEmail(config.orderEmail, subject, `${text}\n\n(Taux appliqué : 1 USD = ${config.rateFcfaPerUsd} FCFA)`, customer.email),
     sendCopy ? sendEmail(customer.email!, t.message.copySubject(id), text.replace(t.message.hello, t.message.thanks)) : Promise.resolve(false),
   ]);
 

@@ -5,7 +5,7 @@ const dec = (n: number) => n.toString();
 const en: Dict = {
   dec,
   meta: {
-    title: "Aura Hair – 100% Vietnamese hair wigs and bundles",
+    title: "Aurahair – 100% Vietnamese hair wigs and bundles",
     description:
       "Wigs, bundles and closures made of 100% Vietnamese hair. All-in prices (shipping included), order on WhatsApp, retail or wholesale.",
     commander: "Get my price",
@@ -15,14 +15,13 @@ const en: Dict = {
     contact: "Contact us",
   },
   nav: {
-    home: "Aura Hair – home",
+    home: "Aurahair – home",
     textures: "Textures",
     qualites: "Hair grades",
     galerie: "Videos",
     contact: "Contact",
     cta: "Get my price",
-    switchTo: "Français",
-    switchLabel: "Voir le site en français",
+    switchLabel: "Site language",
   },
   footer: {
     tagline: "Wigs, bundles and closures made of 100% Vietnamese hair, bought directly from our partner suppliers.",
@@ -45,7 +44,7 @@ const en: Dict = {
     heroCaption: "Burgundy Water Wave bundles, photographed at our supplier.",
     trustTitle: "We follow your order from the supplier to your door",
     trustLead:
-      "You only ever pay Aura Hair. We pay the supplier, check the hair and track the parcel all the way to you.",
+      "You only ever pay Aurahair. We pay the supplier, check the hair and track the parcel all the way to you.",
     trustSteps: [
       ["We pay the supplier directly", "We pay our partner suppliers in Vietnam ourselves. You never send money to a stranger."],
       ["Checked before shipping", "Every item is checked for grade, length, weight and colour. We send you photos and videos of your order."],
@@ -57,7 +56,7 @@ const en: Dict = {
     trustVideo: "An order ready to ship.",
     howTitle: "How it works",
     howSteps: [
-      ["Configure", "Grade, texture, length, closure or frontal, colour, wig making."],
+      ["Choose your wig", "Grade, texture, length, closure or frontal, colour, wig making."],
       ["See the price", "Product price + shipping by weight, in USD and FCFA."],
       ["Confirm", "Your detailed order goes out on WhatsApp and by email."],
       ["We handle the rest", "Supplier payment, checks, wig making, shipping and tracking."],
@@ -213,7 +212,6 @@ const en: Dict = {
     products: "Products",
     shipping: "Shipping to Cameroon",
     total: "Total",
-    rate: (r: number) => `Exchange rate: 1 USD = ${r} FCFA.`,
     details: "My details",
     name: "Full name",
     phone: "WhatsApp number",
@@ -249,7 +247,7 @@ const en: Dict = {
     closureUnavailable: (c: string, l: number) => `${c} not available in ${l}" – pick another size.`,
   },
   message: {
-    hello: "Hello Aura Hair, I'd like to confirm my order.",
+    hello: "Hello Aurahair, I'd like to confirm my order.",
     thanks: "Thank you for your order! Here is the summary. We will contact you on WhatsApp to confirm it.",
     order: "Order",
     gros: "Wholesale",
@@ -263,9 +261,8 @@ const en: Dict = {
     products: "Products",
     shipping: "Shipping to Cameroon",
     total: "TOTAL",
-    rate: "Rate",
     note: "Note",
-    copySubject: (id: string) => `Your Aura Hair order ${id}`,
+    copySubject: (id: string) => `Your Aurahair order ${id}`,
   },
   api: {
     badRequest: "Invalid request.",
@@ -296,7 +293,7 @@ const en: Dict = {
     sending: "Sending…",
     done: "Request saved. If WhatsApp didn't open,",
     clickHere: "click here",
-    hello: "Hello Aura Hair, I have a request.",
+    hello: "Hello Aurahair, I have a request.",
     subjectLabel: "Subject",
   },
 };

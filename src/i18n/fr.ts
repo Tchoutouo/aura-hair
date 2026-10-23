@@ -3,7 +3,7 @@ const dec = (n: number) => n.toString().replace(".", ",");
 const fr = {
   dec,
   meta: {
-    title: "Aura Hair – Perruques et mèches 100 % vietnamiennes",
+    title: "Aurahair – Perruques et mèches 100 % vietnamiennes",
     description:
       "Perruques, mèches et closures en cheveux 100 % vietnamiens. Prix tout compris (transport inclus), commande sur WhatsApp, au détail ou en gros.",
     commander: "Calculer mon prix",
@@ -13,14 +13,13 @@ const fr = {
     contact: "Nous contacter",
   },
   nav: {
-    home: "Aura Hair – accueil",
+    home: "Aurahair – accueil",
     textures: "Textures",
     qualites: "Qualités",
     galerie: "Vidéos",
     contact: "Contact",
     cta: "Calculer mon prix",
-    switchTo: "English",
-    switchLabel: "Voir le site en anglais",
+    switchLabel: "Langue du site",
   },
   footer: {
     tagline: "Perruques, mèches et closures en cheveux 100 % vietnamiens, achetés directement chez nos fournisseurs partenaires.",
@@ -43,7 +42,7 @@ const fr = {
     heroCaption: "Mèches Water Wave bordeaux, photographiées chez notre fournisseur.",
     trustTitle: "Nous suivons votre commande du fournisseur jusqu'à vous",
     trustLead:
-      "Vous ne payez qu'Aura Hair. C'est nous qui réglons le fournisseur, contrôlons les cheveux et suivons le colis jusqu'à destination.",
+      "Vous ne payez qu'Aurahair. C'est nous qui réglons le fournisseur, contrôlons les cheveux et suivons le colis jusqu'à destination.",
     trustSteps: [
       ["Paiement direct au fournisseur", "Nous payons nous-mêmes nos fournisseurs partenaires au Vietnam. Vous n'envoyez jamais d'argent à un inconnu."],
       ["Contrôle avant l'envoi", "Chaque article est vérifié : qualité, longueur, poids, couleur. Nous vous envoyons photos et vidéos de votre commande."],
@@ -55,7 +54,7 @@ const fr = {
     trustVideo: "Une commande prête à être expédiée.",
     howTitle: "Comment ça marche",
     howSteps: [
-      ["Configurez", "Qualité, texture, longueur, closure ou frontal, couleur, montage."],
+      ["Choisissez votre perruque", "Qualité, texture, longueur, closure ou frontal, couleur, montage."],
       ["Voyez le prix", "Prix des produits + transport au poids, en USD et en FCFA."],
       ["Validez", "Votre commande détaillée part sur WhatsApp et par e-mail."],
       ["On s'occupe du reste", "Paiement du fournisseur, vérification, montage, envoi et suivi."],
@@ -211,7 +210,6 @@ const fr = {
     products: "Produits",
     shipping: "Transport vers le Cameroun",
     total: "Total",
-    rate: (r: number) => `Taux appliqué : 1 USD = ${r} FCFA.`,
     details: "Mes coordonnées",
     name: "Nom complet",
     phone: "Téléphone WhatsApp",
@@ -247,7 +245,7 @@ const fr = {
     closureUnavailable: (c: string, l: number) => `${c} non disponible en ${l}" – choisissez une autre taille.`,
   },
   message: {
-    hello: "Bonjour Aura Hair, je souhaite valider ma commande.",
+    hello: "Bonjour Aurahair, je souhaite valider ma commande.",
     thanks: "Merci pour votre commande ! Voici son récapitulatif. Nous vous contactons sur WhatsApp pour la confirmer.",
     order: "Commande",
     gros: "Achat en gros",
@@ -261,9 +259,8 @@ const fr = {
     products: "Produits",
     shipping: "Transport vers le Cameroun",
     total: "TOTAL",
-    rate: "Taux",
     note: "Note",
-    copySubject: (id: string) => `Votre commande Aura Hair ${id}`,
+    copySubject: (id: string) => `Votre commande Aurahair ${id}`,
   },
   api: {
     badRequest: "Requête invalide.",
@@ -294,7 +291,7 @@ const fr = {
     sending: "Envoi…",
     done: "Demande enregistrée. Si WhatsApp ne s'est pas ouvert,",
     clickHere: "cliquez ici",
-    hello: "Bonjour Aura Hair, j'ai une demande.",
+    hello: "Bonjour Aurahair, j'ai une demande.",
     subjectLabel: "Objet",
   },
 };

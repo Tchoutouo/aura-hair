@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
   const t = getDict(isLang(lang) ? lang : "fr").meta;
   return {
-    title: { default: t.title, template: "%s – Aura Hair" },
+    title: { default: t.title, template: "%s – Aurahair" },
     description: t.description,
     alternates: { languages: { fr: "/fr", en: "/en" } },
   };

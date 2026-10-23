@@ -457,7 +457,6 @@ function Cart({
                 <span className="text-sm font-semibold text-muted">{fmtUsd(quote.totalUsd)}</span>
               </dd>
             </div>
-            <p className="text-xs text-muted">{t.rate(config.rateFcfaPerUsd)}</p>
           </dl>
         </>
       )}
