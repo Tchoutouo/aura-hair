@@ -59,6 +59,12 @@ export async function PUT(req: Request) {
   const input = (await req.json().catch(() => null)) as Partial<Config> | null;
   if (!input) return NextResponse.json({ error: "Données invalides." }, { status: 400 });
   const cfg = sanitize(input);
+  if (!cfg.contacts.length) {
+    return NextResponse.json(
+      { error: "Ajoutez au moins un numéro WhatsApp valide (8 chiffres minimum) : les commandes y sont envoyées." },
+      { status: 400 },
+    );
+  }
   try {
     await saveConfig(cfg);
   } catch (e) {

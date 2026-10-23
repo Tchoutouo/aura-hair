@@ -16,13 +16,24 @@ Tout se modifie dans `/admin` → *Prix fournisseurs* et *Réglages*.
 
 ## Déployer sur Vercel
 
-1. Mettez ce dossier sur GitHub (nouveau dépôt), puis sur vercel.com : **Add New → Project → Import** ce dépôt.
-2. Dans **Settings → Environment Variables**, ajoutez au minimum `ADMIN_PASSWORD` (voir `.env.example`).
+1. Créez un dépôt **vide** sur github.com, puis envoyez-y le code :
+   `git remote add origin https://github.com/<vous>/aura-hair.git` puis `git push -u origin main`.
+   Sur vercel.com : **Add New → Project → Import** ce dépôt (Next.js est détecté tout seul).
+2. Dans **Settings → Environment Variables**, ajoutez `ADMIN_PASSWORD` (long, unique) et
+   `ADMIN_SECRET` (chaîne aléatoire, ex. `openssl rand -hex 32`). Voir `.env.example`.
 3. Dans **Storage → Marketplace**, ajoutez **Upstash Redis** et reliez-le au projet
-   (sans lui, le site marche avec les prix par défaut mais l'admin ne peut pas enregistrer et les commandes ne sont pas gardées).
+   (sans lui, le site marche avec les prix par défaut mais l'admin ne peut pas enregistrer, les commandes ne sont pas
+   gardées et les limites anti-abus ne valent que par serveur).
 4. Pour les e-mails : créez un compte sur resend.com, ajoutez `RESEND_API_KEY` et `ORDER_EMAIL_TO`.
    Sans domaine vérifié, Resend n'envoie qu'à l'adresse de votre compte Resend.
-5. Redéployez (Deployments → ⋯ → Redeploy).
+5. Redéployez (Deployments → ⋯ → Redeploy), puis ouvrez `/admin` : l'avertissement « stockage non connecté » doit
+   avoir disparu.
+
+### Limites anti-abus (`src/lib/ratelimit.ts`)
+
+- 5 commandes par connexion (adresse IP) toutes les 10 minutes.
+- 5 tentatives de connexion admin par IP toutes les 15 minutes.
+- Copie de commande au client (seulement si `RESEND_FROM` est défini) : 2 par adresse e-mail et par 24 h.
 
 ## En local
 

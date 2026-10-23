@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { TEXTURES } from "@/lib/defaults";
 import { newOrderId, orderText, whatsappLink } from "@/lib/order";
 import { quoteCart } from "@/lib/pricing";
+import { allow, clientIp } from "@/lib/ratelimit";
 import { getConfig, saveOrder, type Customer } from "@/lib/store";
 import { CLOSURE_SIZES, LENGTHS, type CartItem, type ClosureSize, type Config, type Mode } from "@/lib/types";
 
@@ -59,6 +60,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
   }
 
+  if (!(await allow("orders", clientIp(req)))) {
+    return NextResponse.json(
+      { error: "Trop de commandes envoyées depuis cette connexion. Réessayez dans 10 minutes ou écrivez-nous sur WhatsApp." },
+      { status: 429 },
+    );
+  }
+
   const config = await getConfig();
   const mode: Mode = body.mode === "gros" ? "gros" : "detail";
   const rawItems = Array.isArray(body.items) ? body.items.slice(0, 50) : [];
@@ -97,10 +105,15 @@ export async function POST(req: Request) {
   }
 
   const subject = `Commande ${id} – ${customer.name} – ${Math.round(quote.totalFcfa).toLocaleString("fr-FR")} FCFA`;
+  // The customer copy goes to an address typed in the form: cap it per recipient so the
+  // site cannot be used to mail strangers.
+  const sendCopy =
+    Boolean(customer.email && process.env.RESEND_FROM) &&
+    (await allow("customerEmail", customer.email!.toLowerCase()));
   await Promise.allSettled([
     sendEmail(config.orderEmail, subject, text, customer.email),
-    customer.email && process.env.RESEND_FROM
-      ? sendEmail(customer.email, `Votre commande Aura Hair ${id}`, text.replace("Bonjour Aura Hair, je souhaite valider ma commande.", "Merci pour votre commande ! Voici son récapitulatif. Nous vous contactons sur WhatsApp pour la confirmer."))
+    sendCopy
+      ? sendEmail(customer.email!, `Votre commande Aura Hair ${id}`, text.replace("Bonjour Aura Hair, je souhaite valider ma commande.", "Merci pour votre commande ! Voici son récapitulatif. Nous vous contactons sur WhatsApp pour la confirmer."))
       : Promise.resolve(false),
   ]);
 

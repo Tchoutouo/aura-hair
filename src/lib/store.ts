@@ -30,6 +30,8 @@ export async function getConfig(): Promise<Config> {
     }
   }
   const cfg: Config = { ...DEFAULT_CONFIG, ...(saved ?? {}) };
+  // Orders need a WhatsApp number to go to.
+  if (!cfg.contacts?.length) cfg.contacts = DEFAULT_CONFIG.contacts;
   if (!cfg.orderEmail && process.env.ORDER_EMAIL_TO) cfg.orderEmail = process.env.ORDER_EMAIL_TO;
   return cfg;
 }

@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, checkPassword, sessionToken } from "@/lib/auth";
+import { allow, clientIp } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  if (!(await allow("login", clientIp(req)))) {
+    return NextResponse.json(
+      { error: "Trop de tentatives. Réessayez dans 15 minutes." },
+      { status: 429 },
+    );
+  }
   const { password } = (await req.json().catch(() => ({}))) as { password?: string };
   // Small delay to slow down guessing.
   await new Promise((r) => setTimeout(r, 400));
