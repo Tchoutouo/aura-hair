@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Analytics } from "@vercel/analytics/next";
 import { getDict, isLang, LANGS } from "@/i18n";
 import { getConfig } from "@/lib/store";
 import SiteFooter from "@/components/SiteFooter";
@@ -34,6 +35,7 @@ export default async function LangLayout({ children, params }: Props) {
         <SiteHeader lang={lang} />
         <main className="flex-1">{children}</main>
         <SiteFooter lang={lang} contacts={config.contacts} />
+        <Analytics />
       </body>
     </html>
   );
