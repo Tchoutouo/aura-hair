@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDict, type Lang } from "@/i18n";
+import { WHATSAPP_CHANNEL } from "@/lib/defaults";
 import type { Config } from "@/lib/types";
 
 const pretty = (phone: string) => phone.replace(/^(\+\d{2,3})(\d{3})(\d{3})(\d+)$/, "$1 $2 $3 $4");
@@ -22,6 +23,11 @@ export default function SiteFooter({ lang, contacts }: { lang: Lang; contacts: C
               </a>
             </p>
           ))}
+          <p>
+            <a className="font-semibold text-white underline underline-offset-4" href={WHATSAPP_CHANNEL} target="_blank" rel="noopener noreferrer">
+              {getDict(lang).channel.short}
+            </a>
+          </p>
         </div>
         <div className="space-y-2 text-sm">
           <p className="font-semibold text-white">{t.links}</p>

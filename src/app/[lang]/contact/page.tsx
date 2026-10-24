@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { asLang, getDict } from "@/i18n";
 import { getConfig } from "@/lib/store";
+import ChannelCta from "@/components/ChannelCta";
 import ContactForm from "@/components/ContactForm";
 
 type Props = { params: Promise<{ lang: string }>; searchParams: Promise<{ sujet?: string }> };
@@ -28,6 +29,9 @@ export default async function ContactPage({ params, searchParams }: Props) {
           ))}
         </dl>
         <ContactForm lang={lang} contacts={config.contacts} initialSubject={sujet} />
+      </div>
+      <div className="mt-14">
+        <ChannelCta lang={lang} />
       </div>
     </div>
   );

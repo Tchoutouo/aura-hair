@@ -86,6 +86,8 @@ export const DEFAULT_CONFIG: Config = {
   orderEmail: "",
 };
 
+export const WHATSAPP_CHANNEL = "https://whatsapp.com/channel/0029VbE2wLZ1NCrRA1G3wP0y";
+
 export const TEXTURES = [
   "Bone Straight",
   "Cambodian Wavy",

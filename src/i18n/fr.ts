@@ -21,6 +21,12 @@ const fr = {
     cta: "Calculer mon prix",
     switchLabel: "Langue du site",
   },
+  channel: {
+    title: "Rejoignez la chaîne Aurahair sur WhatsApp",
+    text: "Nouveautés, vidéos de nos cheveux et des commandes en préparation : suivez-nous directement dans WhatsApp.",
+    cta: "Suivre la chaîne",
+    short: "Notre chaîne WhatsApp",
+  },
   footer: {
     tagline: "Perruques, mèches et closures en cheveux 100 % vietnamiens, achetés directement chez nos fournisseurs partenaires.",
     whatsapp: "WhatsApp",

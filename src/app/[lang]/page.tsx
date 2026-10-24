@@ -6,6 +6,7 @@ import { mediaSrc, VIDEOS } from "@/lib/media";
 import { fmtFcfa } from "@/lib/pricing";
 import { getConfig } from "@/lib/store";
 import { CLOSURE_SIZES } from "@/lib/types";
+import ChannelCta from "@/components/ChannelCta";
 import VideoCard from "@/components/VideoCard";
 
 export const dynamic = "force-dynamic";
@@ -211,6 +212,11 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
             {t.closuresCta}
           </Link>
         </div>
+      </section>
+
+      {/* WhatsApp channel */}
+      <section className="mx-auto max-w-6xl px-4 pt-16">
+        <ChannelCta lang={lang} />
       </section>
 
       {/* Other services */}

@@ -23,6 +23,12 @@ const en: Dict = {
     cta: "Get my price",
     switchLabel: "Site language",
   },
+  channel: {
+    title: "Join the Aurahair channel on WhatsApp",
+    text: "New arrivals, videos of our hair and of orders being prepared: follow us right inside WhatsApp.",
+    cta: "Follow the channel",
+    short: "Our WhatsApp channel",
+  },
   footer: {
     tagline: "Wigs, bundles and closures made of 100% Vietnamese hair, bought directly from our partner suppliers.",
     whatsapp: "WhatsApp",
