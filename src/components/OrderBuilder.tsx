@@ -514,7 +514,10 @@ function Cart({
             <a href={status.link} className="font-semibold text-plum underline">
               {t.clickHere}
             </a>
-            .
+            .{" "}
+            <a href={`/${lang}/suivi?n=${status.msg}`} className="font-semibold text-plum underline">
+              {getDict(lang).track.link}
+            </a>
           </p>
         )}
         {status.state === "error" && <p className="text-sm font-semibold text-wine">{status.msg}</p>}

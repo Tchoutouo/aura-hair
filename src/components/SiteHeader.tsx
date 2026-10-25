@@ -16,7 +16,8 @@ export default function SiteHeader({ lang }: { lang: Lang }) {
           <Link href={`/${lang}/textures`} className={`hidden md:inline ${link}`}>{t.textures}</Link>
           <Link href={`/${lang}/qualites`} className={`hidden md:inline ${link}`}>{t.qualites}</Link>
           <Link href={`/${lang}/galerie`} className={`hidden md:inline ${link}`}>{t.galerie}</Link>
-          <Link href={`/${lang}/contact`} className={`hidden sm:inline ${link}`}>{t.contact}</Link>
+          <Link href={`/${lang}/suivi`} className={`hidden sm:inline ${link}`}>{t.suivi}</Link>
+          <Link href={`/${lang}/contact`} className={`hidden lg:inline ${link}`}>{t.contact}</Link>
           <LangSwitch lang={lang} title={t.switchLabel} />
           <Link href={`/${lang}/commander`} className="rounded-full bg-plum px-4 py-2 text-gold-soft hover:bg-plum-2">
             {t.cta}

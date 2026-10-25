@@ -59,3 +59,4 @@ function newId(prefix: string): string {
 
 export const newOrderId = () => newId("AH");
 export const newRequestId = () => newId("DM");
+export const newReviewId = () => newId("AV");

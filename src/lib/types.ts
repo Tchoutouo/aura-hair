@@ -38,6 +38,10 @@ export interface Config {
   lightPriceVirgin: PriceRow;
   /** Wig making in Vietnam, USD per wig (no margin added) */
   mountingFeeUsd: number;
+  /** Day the weekly shipment leaves Vietnam (0 = Sunday … 5 = Friday) */
+  shipWeekday: number;
+  /** Transit time from Vietnam to Cameroon, in days */
+  transitDays: { min: number; max: number };
   contacts: { label: string; phone: string }[];
   orderEmail: string;
   updatedAt?: string;

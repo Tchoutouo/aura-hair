@@ -17,6 +17,17 @@ commande envoyée sur WhatsApp et par e-mail, et page `/admin` protégée pour g
 Le site est en français (`/fr`) et en anglais (`/en`) ; un visiteur arrivant sur `/` est envoyé vers la langue de
 son navigateur. L'admin (`/admin`) reste en français et liste aussi les demandes du formulaire de contact.
 
+Autres fonctions :
+
+- **Prochain envoi** : un bandeau en haut de chaque page donne la date du prochain envoi (chaque vendredi par défaut)
+  et l'arrivée estimée (7 à 10 jours). Jour et délais réglables dans *Réglages → Envois*.
+- **Suivi de commande** (`/fr/suivi`) : la cliente entre son numéro AH-… et son téléphone. Vous changez l'étape
+  (payée, contrôlée, expédiée, arrivée, livrée) et ajoutez un message depuis l'onglet *Commandes* de l'admin.
+  Le lien de suivi est ajouté au message WhatsApp de chaque commande.
+- **Avis clientes** (`/fr/avis`) : publiés seulement après validation dans l'onglet *Avis* de l'admin ;
+  les 3 derniers s'affichent sur l'accueil.
+- **FAQ** (`/fr/faq`) : textes dans `src/i18n/fr.ts` et `en.ts` (`faq`).
+
 Tout se modifie dans `/admin` → *Prix fournisseurs* et *Réglages*.
 
 ## Déployer sur Vercel

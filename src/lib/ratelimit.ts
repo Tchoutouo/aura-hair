@@ -8,6 +8,8 @@ type Rule = { limit: number; window: Duration; windowMs: number };
 const RULES = {
   orders: { limit: 5, window: "10 m", windowMs: 10 * 60_000 },
   contact: { limit: 5, window: "10 m", windowMs: 10 * 60_000 },
+  track: { limit: 20, window: "10 m", windowMs: 10 * 60_000 },
+  review: { limit: 3, window: "24 h", windowMs: 24 * 3600_000 },
   login: { limit: 5, window: "15 m", windowMs: 15 * 60_000 },
   customerEmail: { limit: 2, window: "24 h", windowMs: 24 * 3600_000 },
 } satisfies Record<string, Rule>;

@@ -4,9 +4,10 @@ import { getDict, isLang } from "@/i18n";
 import { TEXTURES, textureImage } from "@/lib/defaults";
 import { mediaSrc, VIDEOS } from "@/lib/media";
 import { fmtFcfa } from "@/lib/pricing";
-import { getConfig } from "@/lib/store";
+import { getConfig, listReviews } from "@/lib/store";
 import { CLOSURE_SIZES } from "@/lib/types";
 import ChannelCta from "@/components/ChannelCta";
+import ReviewList from "@/components/ReviewList";
 import VideoCard from "@/components/VideoCard";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,8 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
   const lang = isLang(raw) ? raw : "fr";
   const d = getDict(lang);
   const t = d.home;
-  const config = await getConfig();
+  const [config, allReviews] = await Promise.all([getConfig(), listReviews()]);
+  const reviews = allReviews.filter((r) => r.status === "approved").slice(0, 3);
   const shipVideo = VIDEOS.find((v) => v.id === "colis-pret")!;
 
   return (
@@ -161,6 +163,21 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
           ))}
         </div>
       </section>
+
+      {/* Customer reviews: shown once at least one is approved */}
+      {reviews.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pt-16">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <h2 className="font-display text-3xl font-bold text-plum md:text-4xl">{d.reviews.title}</h2>
+            <Link href={`/${lang}/avis`} className="font-semibold text-plum underline underline-offset-4">
+              {d.reviews.homeLink}
+            </Link>
+          </div>
+          <div className="mt-8">
+            <ReviewList lang={lang} reviews={reviews} />
+          </div>
+        </section>
+      )}
 
       {/* Hair grades */}
       <section className="mx-auto max-w-6xl px-4 pt-16">

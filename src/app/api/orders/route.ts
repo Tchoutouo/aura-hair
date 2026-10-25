@@ -89,7 +89,8 @@ export async function POST(req: Request) {
 
   const contact = config.contacts.find((x) => x.phone === body.contact) ?? config.contacts[0];
   const id = newOrderId();
-  const text = orderText({ id, mode, customer, quote, rate: config.rateFcfaPerUsd, shippingPerKg: config.shippingFcfaPerKg }, lang);
+  const trackUrl = `${new URL(req.url).origin}/${lang}/suivi?n=${id}`;
+  const text = `${orderText({ id, mode, customer, quote, rate: config.rateFcfaPerUsd, shippingPerKg: config.shippingFcfaPerKg }, lang)}\n\n${t.message.trackLine(trackUrl)}`;
 
   try {
     await saveOrder({ id, createdAt: new Date().toISOString(), mode, customer, items: items as CartItem[], quote, contact: contact.phone, rate: config.rateFcfaPerUsd, lang });

@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { getDict, isLang, LANGS } from "@/i18n";
 import { getConfig } from "@/lib/store";
 import SiteFooter from "@/components/SiteFooter";
+import ShipBanner from "@/components/ShipBanner";
 import SiteHeader from "@/components/SiteHeader";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { display, sans } from "../fonts";
@@ -53,6 +54,7 @@ export default async function LangLayout({ children, params }: Props) {
   return (
     <html lang={lang} className={`${display.variable} ${sans.variable}`}>
       <body className="flex min-h-screen flex-col antialiased">
+        <ShipBanner lang={lang} config={config} />
         <SiteHeader lang={lang} />
         <main className="flex-1">{children}</main>
         <SiteFooter lang={lang} contacts={config.contacts} />

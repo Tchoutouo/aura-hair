@@ -3,7 +3,9 @@ import { getDict, type Lang } from "@/i18n";
 import { WHATSAPP_CHANNEL } from "@/lib/defaults";
 import type { Config } from "@/lib/types";
 
-const pretty = (phone: string) => phone.replace(/^(\+\d{2,3})(\d{3})(\d{3})(\d+)$/, "$1 $2 $3 $4");
+// +237 6xx xxx xxx (Cameroon), +84 xxx xxx xxx (Vietnam)
+const pretty = (phone: string) =>
+  phone.replace(/^(\+237|\+84|\+\d{1,3}?)(\d{3})(\d{3})(\d+)$/, "$1 $2 $3 $4");
 
 export default function SiteFooter({ lang, contacts }: { lang: Lang; contacts: Config["contacts"] }) {
   const t = getDict(lang).footer;
@@ -35,6 +37,9 @@ export default function SiteFooter({ lang, contacts }: { lang: Lang; contacts: C
           <p><Link className="hover:underline" href={`/${lang}/commander?mode=gros`}>{t.gros}</Link></p>
           <p><Link className="hover:underline" href={`/${lang}/qualites`}>{t.qualites}</Link></p>
           <p><Link className="hover:underline" href={`/${lang}/galerie`}>{getDict(lang).meta.galerie}</Link></p>
+          <p><Link className="hover:underline" href={`/${lang}/suivi`}>{t.suivi}</Link></p>
+          <p><Link className="hover:underline" href={`/${lang}/avis`}>{t.avis}</Link></p>
+          <p><Link className="hover:underline" href={`/${lang}/faq`}>{t.faq}</Link></p>
           <p><Link className="hover:underline" href={`/${lang}/contact`}>{t.contact}</Link></p>
         </div>
       </div>

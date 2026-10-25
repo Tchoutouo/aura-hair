@@ -1,5 +1,5 @@
 import { adminConfigured, isAdmin } from "@/lib/auth";
-import { getConfig, listOrders, listRequests, storageReady } from "@/lib/store";
+import { getAllTracking, getConfig, listOrders, listRequests, listReviews, storageReady } from "@/lib/store";
 import AdminDashboard from "@/components/AdminDashboard";
 import LoginForm from "@/components/LoginForm";
 
@@ -18,6 +18,21 @@ export default async function AdminPage() {
     );
   }
   if (!(await isAdmin())) return <LoginForm />;
-  const [config, orders, requests] = await Promise.all([getConfig(), listOrders(), listRequests()]);
-  return <AdminDashboard initialConfig={config} orders={orders} requests={requests} storageReady={storageReady()} />;
+  const [config, orders, requests, tracking, reviews] = await Promise.all([
+    getConfig(),
+    listOrders(),
+    listRequests(),
+    getAllTracking(),
+    listReviews(),
+  ]);
+  return (
+    <AdminDashboard
+      initialConfig={config}
+      orders={orders}
+      requests={requests}
+      tracking={tracking}
+      initialReviews={reviews}
+      storageReady={storageReady()}
+    />
+  );
 }

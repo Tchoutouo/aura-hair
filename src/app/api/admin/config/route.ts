@@ -47,6 +47,11 @@ function sanitize(input: Partial<Config>): Config {
       .sort((a, b) => a.maxLength - b.maxLength),
     lightPriceVirgin: row(input.lightPriceVirgin, d.lightPriceVirgin),
     mountingFeeUsd: num(input.mountingFeeUsd, d.mountingFeeUsd),
+    shipWeekday: Math.min(6, Math.floor(num(input.shipWeekday, d.shipWeekday))),
+    transitDays: (() => {
+      const min = Math.floor(num(input.transitDays?.min, d.transitDays.min));
+      return { min, max: Math.max(min, Math.floor(num(input.transitDays?.max, d.transitDays.max))) };
+    })(),
     contacts: (Array.isArray(input.contacts) && input.contacts.length ? input.contacts : d.contacts)
       .slice(0, 6)
       .map((c) => ({ label: String(c.label ?? "").slice(0, 40), phone: String(c.phone ?? "").replace(/[^\d+]/g, "").slice(0, 20) }))

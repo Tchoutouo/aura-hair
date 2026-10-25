@@ -3,9 +3,62 @@
 import { useState } from "react";
 import { fmtFcfa, fmtUsd } from "@/lib/pricing";
 import { CLOSURE_SIZES, LENGTHS, type Config, type PriceRow } from "@/lib/types";
-import type { StoredOrder, StoredRequest } from "@/lib/store";
+import type { Review, StoredOrder, StoredRequest } from "@/lib/store";
+import { STEPS, type Step, type Tracking } from "@/lib/tracking";
 
-type Tab = "orders" | "requests" | "prices" | "settings";
+type Tab = "orders" | "requests" | "reviews" | "prices" | "settings";
+
+const STEP_LABELS: Record<Step, string> = {
+  received: "Commande reçue",
+  paid: "Payée au fournisseur",
+  checked: "Contrôlée",
+  shipped: "Expédiée",
+  arrived: "Arrivée au Cameroun",
+  delivered: "Livrée",
+};
+
+const WEEKDAYS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+
+/** Step of an order's journey, shown to the customer on the tracking page. */
+function TrackingEditor({ id, initial }: { id: string; initial?: Tracking }) {
+  const [step, setStep] = useState<Step>(initial?.step ?? "received");
+  const [note, setNote] = useState(initial?.note ?? "");
+  const [msg, setMsg] = useState("");
+
+  async function save() {
+    setMsg("Enregistrement…");
+    const res = await fetch("/api/admin/tracking", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, step, note }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setMsg(res.ok ? "Suivi mis à jour : la cliente le voit sur la page de suivi." : data.error || "Erreur");
+  }
+
+  return (
+    <div className="mt-3 grid gap-2 rounded-lg bg-sand p-3 sm:grid-cols-[auto_1fr_auto] sm:items-end">
+      <label className="text-sm">
+        Étape du suivi
+        <select value={step} onChange={(e) => setStep(e.target.value as Step)} className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2 text-sm">
+          {STEPS.map((s) => (
+            <option key={s} value={s}>
+              {STEP_LABELS[s]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="text-sm">
+        Message pour la cliente (facultatif)
+        <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2 text-sm" />
+      </label>
+      <button onClick={save} className="h-9 rounded-full bg-plum px-4 text-sm font-semibold text-gold-soft">
+        Mettre à jour
+      </button>
+      {msg && <p className="text-xs text-muted sm:col-span-3">{msg}</p>}
+    </div>
+  );
+}
 
 const SUBJECTS: Record<StoredRequest["subject"], string> = {
   products: "Achat d'autres articles",
@@ -82,13 +135,30 @@ export default function AdminDashboard({
   initialConfig,
   orders,
   requests,
+  tracking,
+  initialReviews,
   storageReady,
 }: {
   initialConfig: Config;
   orders: StoredOrder[];
   requests: StoredRequest[];
+  tracking: Record<string, Tracking>;
+  initialReviews: Review[];
   storageReady: boolean;
 }) {
+  const [reviews, setReviews] = useState(initialReviews);
+
+  async function moderate(id: string, action: "approve" | "delete") {
+    if (action === "delete" && !window.confirm("Supprimer définitivement cet avis ?")) return;
+    const res = await fetch("/api/admin/reviews", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action }),
+    });
+    if (!res.ok) return window.alert((await res.json().catch(() => ({}))).error || "Erreur");
+    setReviews((rs) => (action === "delete" ? rs.filter((r) => r.id !== id) : rs.map((r) => (r.id === id ? { ...r, status: "approved" } : r))));
+  }
+
   const [tab, setTab] = useState<Tab>("orders");
   const [cfg, setCfg] = useState<Config>(initialConfig);
   const [status, setStatus] = useState("");
@@ -141,6 +211,7 @@ export default function AdminDashboard({
           [
             ["orders", `Commandes (${orders.length})`],
             ["requests", `Demandes (${requests.length})`],
+            ["reviews", `Avis (${reviews.filter((r) => r.status === "pending").length} à valider)`],
             ["prices", "Prix fournisseurs"],
             ["settings", "Réglages"],
           ] as [Tab, string][]
@@ -172,6 +243,9 @@ export default function AdminDashboard({
               <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2">
                 <span className="font-semibold text-plum">
                   {o.id} · {o.customer.name} · {o.customer.city}
+                  <span className="ml-2 rounded-full border border-line px-2 py-0.5 text-xs font-semibold text-muted">
+                    {STEP_LABELS[tracking[o.id]?.step ?? "received"]}
+                  </span>
                 </span>
                 <span className="text-sm">
                   <span className={`mr-2 rounded-full px-2 py-0.5 text-xs font-semibold ${o.mode === "gros" ? "bg-gold text-ink" : "bg-plum text-gold-soft"}`}>
@@ -202,6 +276,7 @@ export default function AdminDashboard({
                   <strong>{fmtFcfa(o.quote.totalFcfa)}</strong> (taux {o.rate})
                 </p>
                 {o.customer.note && <p className="italic">Note : {o.customer.note}</p>}
+                <TrackingEditor id={o.id} initial={tracking[o.id]} />
               </div>
             </details>
           ))}
@@ -233,6 +308,37 @@ export default function AdminDashboard({
                 <p className="whitespace-pre-wrap">{r.message}</p>
               </div>
             </details>
+          ))}
+        </div>
+      )}
+
+      {tab === "reviews" && (
+        <div className="mt-6 space-y-3">
+          {!reviews.length && <p className="text-muted">Aucun avis pour l&apos;instant.</p>}
+          {reviews.map((r) => (
+            <div key={r.id} className="rounded-xl border border-line bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-semibold text-plum">
+                  {r.name}, {r.city} – {"★".repeat(r.rating)}
+                  {"☆".repeat(5 - r.rating)}
+                  <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${r.status === "approved" ? "bg-whatsapp text-white" : "bg-gold-soft text-ink"}`}>
+                    {r.status === "approved" ? "Publié" : "À valider"}
+                  </span>
+                </p>
+                <p className="text-xs text-muted">{new Date(r.createdAt).toLocaleString("fr-FR")}</p>
+              </div>
+              <p className="mt-2 whitespace-pre-wrap text-sm">{r.text}</p>
+              <div className="mt-3 flex gap-3 text-sm">
+                {r.status === "pending" && (
+                  <button onClick={() => moderate(r.id, "approve")} className="rounded-full bg-plum px-4 py-1.5 font-semibold text-gold-soft">
+                    Publier
+                  </button>
+                )}
+                <button onClick={() => moderate(r.id, "delete")} className="text-wine underline">
+                  Supprimer
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -293,6 +399,35 @@ export default function AdminDashboard({
                 <NumInput label={label} value={value} step="0.01" onChange={(v) => set(v ?? 0)} />
               </label>
             ))}
+          </section>
+
+          <section className="space-y-3 rounded-2xl border border-line bg-white p-4">
+            <h3 className="font-display text-xl font-bold text-plum">Envois</h3>
+            <p className="text-xs text-muted">Sert au bandeau « Prochain envoi » et à l&apos;estimation d&apos;arrivée.</p>
+            <label className="block text-sm">
+              Jour d&apos;envoi depuis le Vietnam
+              <select
+                value={cfg.shipWeekday}
+                onChange={(e) => update((c) => ((c.shipWeekday = Number(e.target.value)), c))}
+                className={input}
+              >
+                {WEEKDAYS.map((d, i) => (
+                  <option key={d} value={i}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <label>
+                Trajet minimum (jours)
+                <NumInput label="Trajet minimum" value={cfg.transitDays.min} onChange={(v) => update((c) => ((c.transitDays.min = v ?? 0), c))} />
+              </label>
+              <label>
+                Trajet maximum (jours)
+                <NumInput label="Trajet maximum" value={cfg.transitDays.max} onChange={(v) => update((c) => ((c.transitDays.max = v ?? 0), c))} />
+              </label>
+            </div>
           </section>
 
           <section className="space-y-3 rounded-2xl border border-line bg-white p-4">
