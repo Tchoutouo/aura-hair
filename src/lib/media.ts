@@ -16,6 +16,11 @@ export const VIDEOS: MediaItem[] = [
   { id: "ombre-cuivre", w: 540, h: 720 },
   { id: "perruque-lisse", w: 540, h: 720 },
   { id: "curly-couleurs", w: 540, h: 960 },
+  { id: "perruque-cuivre", w: 540, h: 960 },
+  { id: "meches-blond-noir", w: 540, h: 960 },
+  { id: "bordeaux-mannequin", w: 540, h: 960 },
+  { id: "meches-balayage", w: 540, h: 960 },
+  { id: "noir-lisse", w: 540, h: 968 },
   { id: "colis-pret", w: 540, h: 720 },
   { id: "commande-emballee", w: 540, h: 720 },
 ];
