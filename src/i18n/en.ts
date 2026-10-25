@@ -29,6 +29,10 @@ const en: Dict = {
     cta: "Follow the channel",
     short: "Our WhatsApp channel",
   },
+  chat: {
+    label: "Message us on WhatsApp",
+    message: "Hello Aurahair, I have a question.",
+  },
   footer: {
     tagline: "Wigs, bundles and closures made of 100% Vietnamese hair, bought directly from our partner suppliers.",
     whatsapp: "WhatsApp",

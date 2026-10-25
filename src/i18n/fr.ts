@@ -27,6 +27,10 @@ const fr = {
     cta: "Suivre la chaîne",
     short: "Notre chaîne WhatsApp",
   },
+  chat: {
+    label: "Nous écrire sur WhatsApp",
+    message: "Bonjour Aurahair, j'ai une question.",
+  },
   footer: {
     tagline: "Perruques, mèches et closures en cheveux 100 % vietnamiens, achetés directement chez nos fournisseurs partenaires.",
     whatsapp: "WhatsApp",
