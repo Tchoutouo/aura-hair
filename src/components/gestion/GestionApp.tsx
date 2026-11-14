@@ -62,7 +62,7 @@ export default function GestionApp({
     const res = await fetch("/api/admin/gestion", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, ...payload }),
+      body: JSON.stringify({ action, actor: me, ...payload }),
     });
     const json = await res.json().catch(() => ({}));
     if (res.status === 401) throw new Error("Session expirée : rechargez la page et reconnectez-vous.");
@@ -70,7 +70,7 @@ export default function GestionApp({
     setData(json.data);
     setKeys(json.keys);
     return json as Record<string, unknown>;
-  }, []);
+  }, [me]);
 
   const go = useCallback((t: Tab, i: Intent = null) => {
     setTab(t);

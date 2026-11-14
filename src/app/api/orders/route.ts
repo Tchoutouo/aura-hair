@@ -3,7 +3,9 @@ import { asLang, getDict } from "@/i18n";
 import { TEXTURES } from "@/lib/defaults";
 import { sendEmail } from "@/lib/email";
 import { newOrderId, orderText, whatsappLink } from "@/lib/order";
-import { quoteCart } from "@/lib/pricing";
+import { waLink } from "@/lib/gestion/messages";
+import { notify } from "@/lib/notify";
+import { fmtFcfa, quoteCart } from "@/lib/pricing";
 import { allow, clientIp } from "@/lib/ratelimit";
 import { getConfig, saveOrder, type Customer } from "@/lib/store";
 import { CLOSURE_SIZES, LENGTHS, type CartItem, type ClosureSize, type Config, type Mode } from "@/lib/types";
@@ -98,17 +100,31 @@ export async function POST(req: Request) {
     console.error("saveOrder failed", e);
   }
 
-  const subject = `Commande ${id} – ${customer.name} – ${Math.round(quote.totalFcfa).toLocaleString("fr-FR")} FCFA`;
+  // Owners' e-mail: the order, the customer and where the order was placed from. Only the shop sees the exchange rate.
+  notify(req, {
+    subject: `Commande ${id} sur le site : ${customer.name}, ${fmtFcfa(quote.totalFcfa)}`,
+    title: `Nouvelle commande sur le site, ${id}`,
+    actor: "La cliente, depuis le site",
+    rows: [
+      ["Cliente", customer.name],
+      ["Téléphone", customer.phone],
+      ["Ville de livraison", customer.city],
+      ...(customer.email ? ([["E-mail", customer.email]] as [string, string][]) : []),
+      ["Type d'achat", mode === "gros" ? "En gros" : "Au détail"],
+      ["Total", `${fmtFcfa(quote.totalFcfa)} (taux 1 $ = ${config.rateFcfaPerUsd} F)`],
+      ["Envoyée au numéro", `${contact.label} ${contact.phone}`],
+      ["Langue du site", lang === "en" ? "Anglais" : "Français"],
+    ],
+    lines: text.split("\n"),
+    link: { label: "Écrire à la cliente sur WhatsApp", url: waLink(customer.phone, `Bonjour ${customer.name}, c'est Aurahair, à propos de votre commande ${id}.`) },
+    replyTo: customer.email,
+  });
   // The customer copy goes to an address typed in the form: cap it per recipient so the
   // site cannot be used to mail strangers.
   const sendCopy =
     Boolean(customer.email && process.env.RESEND_FROM) &&
     (await allow("customerEmail", customer.email!.toLowerCase()));
-  await Promise.allSettled([
-    // Only the shop sees the exchange rate.
-    sendEmail(config.orderEmail, subject, `${text}\n\n(Taux appliqué : 1 USD = ${config.rateFcfaPerUsd} FCFA)`, customer.email),
-    sendCopy ? sendEmail(customer.email!, t.message.copySubject(id), text.replace(t.message.hello, t.message.thanks)) : Promise.resolve(false),
-  ]);
+  if (sendCopy) await sendEmail(customer.email!, t.message.copySubject(id), text.replace(t.message.hello, t.message.thanks)).catch(() => false);
 
   return NextResponse.json({ id, whatsapp: whatsappLink(contact.phone, text) });
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { asLang, getDict } from "@/i18n";
 import { newReviewId } from "@/lib/order";
+import { notify } from "@/lib/notify";
 import { allow, clientIp } from "@/lib/ratelimit";
 import { saveReview } from "@/lib/store";
 
@@ -37,5 +38,13 @@ export async function POST(req: Request) {
     console.error("saveReview failed", e);
     return NextResponse.json({ error: t.track.unavailable }, { status: 503 });
   }
+  notify(req, {
+    subject: `Nouvel avis à valider : ${name}, ${city}`,
+    title: "Nouvel avis cliente à valider",
+    actor: "Une visiteuse du site",
+    rows: [["Prénom", name], ["Ville indiquée", city], ["Note", `${rating >= 1 && rating <= 5 ? rating : 5} sur 5`]],
+    lines: [text],
+    link: { label: "Publier ou supprimer dans l'admin", url: `${new URL(req.url).origin}/admin` },
+  });
   return NextResponse.json({ ok: true });
 }

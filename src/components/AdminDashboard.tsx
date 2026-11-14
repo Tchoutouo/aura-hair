@@ -486,7 +486,7 @@ export default function AdminDashboard({
           <section className="space-y-3 rounded-2xl border border-line bg-white p-4 md:col-span-2">
             <h3 className="font-display text-xl font-bold text-plum">Contacts et e-mail</h3>
             <label className="block text-sm">
-              E-mail qui reçoit les commandes
+              E-mail qui reçoit les commandes et les notifications (ventes, paiements, retours, connexions…)
               <input type="email" className={input} value={cfg.orderEmail} onChange={(e) => update((c) => ((c.orderEmail = e.target.value), c))} />
             </label>
             {cfg.contacts.map((ct, i) => (

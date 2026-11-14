@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { asLang, getDict } from "@/i18n";
-import { sendEmail } from "@/lib/email";
+import { waLink } from "@/lib/gestion/messages";
+import { notify } from "@/lib/notify";
 import { newRequestId, whatsappLink } from "@/lib/order";
 import { allow, clientIp } from "@/lib/ratelimit";
 import { getConfig, saveRequest, type RequestSubject } from "@/lib/store";
@@ -50,9 +51,16 @@ export async function POST(req: Request) {
   } catch (e) {
     console.error("saveRequest failed", e);
   }
-  await sendEmail(config.orderEmail, `Demande ${id} – ${getDict("fr").contact.services[subject][0]} – ${name}`, text, email).catch(
-    (e) => console.error("contact email failed", e),
-  );
+  const topic = getDict("fr").contact.services[subject][0];
+  notify(req, {
+    subject: `Demande ${id} : ${topic}, ${name}`,
+    title: `Nouvelle demande : ${topic}`,
+    actor: "La personne, depuis le formulaire de contact",
+    rows: [["Nom", name], ["Téléphone", phone], ...(email ? ([["E-mail", email]] as [string, string][]) : []), ["Objet", topic], ["Langue du site", lang === "en" ? "Anglais" : "Français"]],
+    lines: [message],
+    link: { label: "Lui répondre sur WhatsApp", url: waLink(phone, `Bonjour ${name}, c'est Aurahair, à propos de votre demande ${id}.`) },
+    replyTo: email,
+  });
 
   return NextResponse.json({ id, whatsapp: whatsappLink(contact.phone, text) });
 }

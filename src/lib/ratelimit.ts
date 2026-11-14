@@ -11,6 +11,7 @@ const RULES = {
   track: { limit: 20, window: "10 m", windowMs: 10 * 60_000 },
   review: { limit: 3, window: "24 h", windowMs: 24 * 3600_000 },
   login: { limit: 5, window: "15 m", windowMs: 15 * 60_000 },
+  loginAlert: { limit: 1, window: "60 m", windowMs: 60 * 60_000 },
   customerEmail: { limit: 2, window: "24 h", windowMs: 24 * 3600_000 },
 } satisfies Record<string, Rule>;
 

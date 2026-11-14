@@ -1,15 +1,21 @@
 import "server-only";
 
-/** Sends a plain-text e-mail through Resend. Returns false when e-mail is not configured. */
-export async function sendEmail(to: string, subject: string, text: string, replyTo?: string): Promise<boolean> {
+/**
+ * Sends an e-mail through Resend (plain text, or the given HTML). Returns false when e-mail is not configured.
+ * Without a domain verified at Resend, mail can only go to the Resend account's own address.
+ */
+export async function sendEmail(to: string, subject: string, text: string, replyTo?: string, htmlBody?: string): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key || !to) return false;
   const from = process.env.RESEND_FROM || "Aurahair <onboarding@resend.dev>";
-  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#2A1E24"><pre style="font-family:inherit;white-space:pre-wrap">${text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/\*/g, "")}</pre></div>`;
-  const res = await fetch("https://api.resend.com/emails", {
+  const html =
+    htmlBody ??
+    `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;color:#2A1E24"><pre style="font-family:inherit;white-space:pre-wrap">${text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/\*/g, "")}</pre></div>`;
+  // RESEND_API_URL only serves local tests.
+  const res = await fetch(process.env.RESEND_API_URL || "https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from, to: [to], subject, text: text.replace(/\*/g, ""), html, ...(replyTo ? { reply_to: replyTo } : {}) }),

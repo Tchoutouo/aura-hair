@@ -2,18 +2,22 @@ import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
 import { analyze, returnNumber, saleTotal, today } from "@/lib/gestion/compute";
+import { gestionNotice } from "@/lib/gestion/notices";
 import { seedData } from "@/lib/gestion/seed";
 import { invoiceKeys, loadGestion, put, remove } from "@/lib/gestion/store";
+import { notify } from "@/lib/notify";
 import {
   CATEGORIES,
   ITEM_STATUS,
   METHODS,
+  PARTNER_NAMES,
   PARTNERS,
   RETURN_OUTCOMES,
   RETURN_SOLUTIONS,
   SUPPLIER_CLAIMS,
   type Category,
   type Expense,
+  type GestionData,
   type Item,
   type ItemStatus,
   type Method,
@@ -60,8 +64,7 @@ const pick = <T extends string>(v: unknown, options: Record<T, string>): T | und
 /** Status of a defective article according to what is decided for it. */
 const statusFor = (o: ReturnOutcome): ItemStatus => (o === "stock" ? "stock" : o === "perte" ? "retire" : "sav");
 
-async function handle(action: string, b: Body) {
-  const data = await loadGestion();
+async function handle(action: string, b: Body, data: GestionData): Promise<Record<string, unknown> | undefined> {
   const order = (id: unknown) => data.orders.find((o) => o.id === id);
   const item = (id: unknown) => data.items.find((i) => i.id === id);
   // Sale where the article is currently sold (returned lines no longer count).
@@ -510,8 +513,13 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as Body | null;
   if (!body || typeof body.action !== "string") return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
   try {
-    const result = await handle(body.action, body);
+    const before = await loadGestion();
+    const result = await handle(body.action, body, before);
     const data = await loadGestion();
+    // E-mail to the owners: who did what, from where.
+    const actor = isPartner(body.actor) ? `${PARTNER_NAMES[body.actor as Partner]} (dans la gestion)` : "Gestion (personne non précisée)";
+    const notice = gestionNotice(body.action, body, before, data, result, new URL(req.url).origin, actor);
+    if (notice) notify(req, notice);
     return NextResponse.json({ ok: true, ...(result ?? {}), data, keys: invoiceKeys(data) });
   } catch (e) {
     if (e instanceof Invalid) return NextResponse.json({ error: e.message }, { status: 400 });
