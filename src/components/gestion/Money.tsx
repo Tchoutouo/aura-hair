@@ -22,18 +22,21 @@ export default function Money() {
   const describe = (m: Movement) => {
     if (m.kind === "payment") {
       const s = saleOf(m.saleId);
+      const name = s?.customer.name ?? "cliente";
+      if (m.method === "avoir")
+        return { title: `Avoir de ${name} (${m.amount < 0 ? "utilisé" : "reçu"})`, sub: "Aucun argent ne bouge", sign: 0, people: [m.receivedBy] as string[] };
       return {
-        title: `Paiement de ${s?.customer.name ?? "cliente"}`,
-        sub: `${METHODS[m.method]} · reçu par ${PARTNER_NAMES[m.receivedBy]}`,
-        sign: 1,
+        title: m.amount < 0 ? `Remboursement à ${name}` : `Paiement de ${name}`,
+        sub: `${METHODS[m.method]} · ${m.amount < 0 ? "rendu" : "reçu"} par ${PARTNER_NAMES[m.receivedBy]}`,
+        sign: m.amount < 0 ? -1 : 1,
         people: [m.receivedBy] as string[],
       };
     }
     if (m.kind === "expense")
       return {
         title: m.label,
-        sub: `${CATEGORIES[m.category]}${m.orderId ? ` · ${orderName(m.orderId)}` : ""} · payé par ${PAYER_NAMES[m.paidBy]}${m.via ? ` (chez ${PARTNER_NAMES[m.via]})` : ""}`,
-        sign: -1,
+        sub: `${CATEGORIES[m.category]}${m.orderId ? ` · ${orderName(m.orderId)}` : ""} · ${m.amount < 0 ? "reçu" : "payé"} par ${PAYER_NAMES[m.paidBy]}${m.via ? ` (chez ${PARTNER_NAMES[m.via]})` : ""}`,
+        sign: m.amount < 0 ? 1 : -1,
         people: [m.paidBy, m.via ?? ""],
       };
     return {
@@ -163,16 +166,24 @@ export default function Money() {
                     </span>
                   </span>
                   <span className={`font-semibold tabular-nums ${d.sign > 0 ? "text-whatsapp" : d.sign < 0 ? "text-wine" : "text-muted"}`}>
-                    {d.sign === 0 ? F(m.amount) : signed(d.sign * m.amount)}
+                    {d.sign === 0 ? F(Math.abs(m.amount)) : signed(d.sign * Math.abs(m.amount))}
                   </span>
-                  <span className="flex gap-3">
-                    <Btn kind="link" onClick={() => edit(m)}>
-                      Modifier
+                  {"returnId" in m && m.returnId ? (
+                    <Btn kind="link" onClick={() => go("retours")}>
+                      Voir le retour
                     </Btn>
-                    <Btn kind="link" className="text-wine" onClick={() => del(m)}>
-                      Supprimer
-                    </Btn>
-                  </span>
+                  ) : (
+                    <span className="flex gap-3">
+                      {!(m.kind === "payment" && (m.method === "avoir" || m.amount < 0)) && (
+                        <Btn kind="link" onClick={() => edit(m)}>
+                          Modifier
+                        </Btn>
+                      )}
+                      <Btn kind="link" className="text-wine" onClick={() => del(m)}>
+                        Supprimer
+                      </Btn>
+                    </span>
+                  )}
                 </li>
               );
             })}

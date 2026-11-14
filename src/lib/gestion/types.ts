@@ -21,6 +21,8 @@ export const METHODS = {
   cash: "Espèces",
   virement: "Virement",
   autre: "Autre",
+  /** Customer credit moved from one sale to another: no real money */
+  avoir: "Avoir",
 } as const;
 export type Method = keyof typeof METHODS;
 
@@ -29,6 +31,7 @@ export const CATEGORIES = {
   transport: "Transport / fret",
   frais: "Frais (transfert, banque)",
   montage: "Montage / coiffure",
+  reparation: "Réparation / SAV",
   accessoires: "Accessoires et matériel",
   deplacement: "Déplacements (taxi…)",
   communication: "Connexion et crédit",
@@ -53,8 +56,13 @@ export interface Order {
   createdAt: string;
 }
 
-export type ItemStatus = "stock" | "reserve" | "retire";
-export const ITEM_STATUS: Record<ItemStatus, string> = { stock: "En stock", reserve: "Réservée", retire: "Retirée" };
+export type ItemStatus = "stock" | "reserve" | "retire" | "sav";
+export const ITEM_STATUS: Record<ItemStatus, string> = {
+  stock: "En stock",
+  reserve: "Réservée",
+  retire: "Retirée (perte, cadeau…)",
+  sav: "En SAV (défaut)",
+};
 
 /** One article (usually one wig) of an order. */
 export interface Item {
@@ -83,7 +91,8 @@ export interface Sale {
   number: number;
   date: string;
   customer: { name: string; phone: string };
-  lines: { itemId: string; price: number }[];
+  /** A returned line stays for history but no longer counts in the total */
+  lines: { itemId: string; price: number; returned?: boolean }[];
   discount: number;
   /** Dollar rate applied when pricing this sale (information only) */
   rate?: number;
@@ -95,7 +104,11 @@ export interface Sale {
   createdAt: string;
 }
 
-/** Customer money coming in, always into the caisse. */
+/**
+ * Customer money coming in, always into the caisse.
+ * Negative = money given back to the customer (refund), paid by `receivedBy`.
+ * Method "avoir" = credit moved between two sales (always in pairs, no real money).
+ */
 export interface Payment {
   id: string;
   kind: "payment";
@@ -104,6 +117,9 @@ export interface Payment {
   amount: number;
   method: Method;
   receivedBy: Partner;
+  returnId?: string;
+  /** The other half of a credit ("avoir") moved between two sales */
+  pairId?: string;
   note?: string;
 }
 
@@ -122,6 +138,8 @@ export interface Expense {
   orderId?: string;
   /** Cost of this article only */
   itemId?: string;
+  /** Repair cost or supplier refund (negative amount) of a return */
+  returnId?: string;
   note?: string;
 }
 
@@ -144,12 +162,65 @@ export interface Transfer {
 
 export type Movement = Payment | Expense | Transfer;
 
+export const RETURN_SOLUTIONS = {
+  echange: "Échange contre un autre article",
+  avoir: "Avoir pour un prochain achat",
+  remboursement: "Remboursement",
+  reparation: "Réparation, la cliente garde sa perruque",
+  aucune: "Aucune suite (défaut non reconnu)",
+} as const;
+export type ReturnSolution = keyof typeof RETURN_SOLUTIONS;
+
+export const RETURN_OUTCOMES = {
+  attente: "À décider",
+  stock: "Réparée ou en bon état : remise en vente",
+  fournisseur: "Renvoyée au fournisseur",
+  perte: "Hors d'usage (perte)",
+  cliente: "Restée chez la cliente",
+} as const;
+export type ReturnOutcome = keyof typeof RETURN_OUTCOMES;
+
+export const SUPPLIER_CLAIMS = {
+  aucune: "Pas de réclamation",
+  demandee: "Réclamation envoyée",
+  acceptee: "Acceptée par le fournisseur",
+  refusee: "Refusée par le fournisseur",
+} as const;
+export type SupplierClaim = keyof typeof SUPPLIER_CLAIMS;
+
+/** A defective article: returned by a customer, or found faulty in stock. */
+export interface Return {
+  id: string;
+  number: number;
+  date: string;
+  itemId: string;
+  origin: "cliente" | "stock";
+  /** Sale the article came from (customer returns) */
+  saleId?: string;
+  problem: string;
+  solution?: ReturnSolution;
+  /** Article given instead (exchange) */
+  replacementItemId?: string;
+  outcome: ReturnOutcome;
+  claim: SupplierClaim;
+  closed: boolean;
+  note?: string;
+  /** What creating the return changed, so that deleting it can put things back */
+  effects: {
+    prevItemStatus: ItemStatus;
+    lineReturned?: boolean;
+    prevReplacementStatus?: ItemStatus;
+  };
+  createdAt: string;
+}
+
 export interface GestionData {
   orders: Order[];
   items: Item[];
   sales: Sale[];
   moves: Movement[];
+  returns: Return[];
 }
 
-export const COLLECTIONS = ["orders", "items", "sales", "moves"] as const;
+export const COLLECTIONS = ["orders", "items", "sales", "moves", "returns"] as const;
 export type Collection = (typeof COLLECTIONS)[number];

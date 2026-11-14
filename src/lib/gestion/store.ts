@@ -13,8 +13,8 @@ function db() {
 
 export async function loadGestion(): Promise<GestionData> {
   const r = redis();
-  if (!r) return { orders: [], items: [], sales: [], moves: [] };
-  const [orders, items, sales, moves] = await Promise.all(
+  if (!r) return { orders: [], items: [], sales: [], moves: [], returns: [] };
+  const [orders, items, sales, moves, returns] = await Promise.all(
     COLLECTIONS.map(async (c) => Object.values((await r.hgetall<Record<string, unknown>>(key(c))) ?? {})),
   );
   return {
@@ -22,6 +22,7 @@ export async function loadGestion(): Promise<GestionData> {
     items: (items as GestionData["items"]).sort((a, b) => a.id.localeCompare(b.id)),
     sales: (sales as GestionData["sales"]).sort((a, b) => b.date.localeCompare(a.date) || b.number - a.number),
     moves: (moves as GestionData["moves"]).sort((a, b) => b.date.localeCompare(a.date)),
+    returns: (returns as GestionData["returns"]).sort((a, b) => b.date.localeCompare(a.date) || b.number - a.number),
   };
 }
 

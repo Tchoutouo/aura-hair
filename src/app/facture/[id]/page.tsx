@@ -55,9 +55,12 @@ export default async function FacturePage({ params, searchParams }: { params: Pr
           </thead>
           <tbody>
             {s.lines.map((l) => (
-              <tr key={l.itemId} className="border-b border-line">
-                <td className="py-3">{a.itemInfo.get(l.itemId)?.item.label ?? "Article"}</td>
-                <td className="py-3 text-right tabular-nums">{fmtFcfa(l.price)}</td>
+              <tr key={l.itemId} className={`border-b border-line ${l.returned ? "text-muted" : ""}`}>
+                <td className="py-3">
+                  <span className={l.returned ? "line-through" : ""}>{a.itemInfo.get(l.itemId)?.item.label ?? "Article"}</span>
+                  {l.returned && <span className="ml-2 text-xs">(retournée)</span>}
+                </td>
+                <td className={`py-3 text-right tabular-nums ${l.returned ? "line-through" : ""}`}>{fmtFcfa(l.price)}</td>
               </tr>
             ))}
             {s.discount > 0 && (
@@ -83,7 +86,13 @@ export default async function FacturePage({ params, searchParams }: { params: Pr
           </tfoot>
         </table>
 
-        {info.remaining <= 0 && <p className="mt-6 rounded-lg bg-sand p-3 text-center font-semibold text-plum">Facture entièrement réglée. Merci !</p>}
+        {info.credit > 0 ? (
+          <p className="mt-6 rounded-lg bg-sand p-3 text-center font-semibold text-plum">
+            Avoir en votre faveur : {fmtFcfa(info.credit)}, à utiliser sur un prochain achat.
+          </p>
+        ) : (
+          info.remaining <= 0 && <p className="mt-6 rounded-lg bg-sand p-3 text-center font-semibold text-plum">Facture entièrement réglée. Merci !</p>
+        )}
 
         {s.schedule.length > 0 && (
           <section className="mt-8 text-sm">
@@ -112,9 +121,9 @@ export default async function FacturePage({ params, searchParams }: { params: Pr
               {info.payments.map((p) => (
                 <li key={p.id} className="flex justify-between py-2">
                   <span>
-                    {fmtDate(p.date)} · {METHODS[p.method]}
+                    {fmtDate(p.date)} · {p.method === "avoir" ? (p.amount < 0 ? "Avoir utilisé sur un autre achat" : "Réglé avec un avoir") : p.amount < 0 ? `Remboursement (${METHODS[p.method]})` : METHODS[p.method]}
                   </span>
-                  <span className="tabular-nums">{fmtFcfa(p.amount)}</span>
+                  <span className="tabular-nums">{p.amount < 0 ? `− ${fmtFcfa(-p.amount)}` : fmtFcfa(p.amount)}</span>
                 </li>
               ))}
             </ul>

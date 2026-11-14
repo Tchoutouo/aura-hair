@@ -53,13 +53,21 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {(late.length > 0 || t.caisse < 0) && (
+      {(late.length > 0 || t.caisse < 0 || t.openReturns > 0) && (
         <div className="space-y-2">
           {late.length > 0 && (
             <p className="rounded-xl bg-wine p-4 text-sm text-white">
               {late.length} cliente{late.length > 1 ? "s ont" : " a"} un paiement en retard, pour {F(t.overdue)}.{" "}
               <button type="button" onClick={() => go("echeances")} className="font-semibold underline">
                 Voir les échéances et relancer
+              </button>
+            </p>
+          )}
+          {t.openReturns > 0 && (
+            <p className="rounded-xl border border-line bg-white p-4 text-sm">
+              {t.openReturns} retour{t.openReturns > 1 ? "s" : ""} de perruque défectueuse en cours.{" "}
+              <button type="button" onClick={() => go("retours")} className="font-semibold underline">
+                Voir les retours
               </button>
             </p>
           )}
@@ -90,11 +98,16 @@ export default function Dashboard() {
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Total investi" value={F(t.invested)} sub={`Commandes ${F(t.investedOrders)}, autres dépenses ${F(t.general)}`} />
           <Stat label="Investissement récupéré" value={pct(t.recovered)} sub={`${F(t.received)} encaissés sur ${F(t.invested)}`} />
-          <Stat label="Bénéfice net à ce jour" value={F(t.netProfit)} sub="Marge brute moins les dépenses générales" tone={t.netProfit >= 0 ? "good" : "bad"} />
+          <Stat
+            label="Bénéfice net à ce jour"
+            value={F(t.netProfit)}
+            sub={`Marge brute moins les dépenses générales${t.losses ? ` et ${F(t.losses)} de pertes` : ""}`}
+            tone={t.netProfit >= 0 ? "good" : "bad"}
+          />
           <Stat
             label={`Stock : ${t.stockCount} article${t.stockCount > 1 ? "s" : ""}`}
             value={F(t.stockCost)}
-            sub={`Valeur de vente visée ${F(t.stockValue)}${t.stockUnpriced ? ` (${t.stockUnpriced} sans prix)` : ""}`}
+            sub={`Valeur de vente visée ${F(t.stockValue)}${t.stockUnpriced ? ` (${t.stockUnpriced} sans prix)` : ""}${t.savCount ? `. ${t.savCount} en SAV` : ""}`}
           />
         </div>
       </section>

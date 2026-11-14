@@ -61,7 +61,7 @@ function PartnerSelect({ value, onChange, withCaisse }: { value: string; onChang
 function MethodSelect({ value, onChange }: { value: Method; onChange: (v: Method) => void }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value as Method)} className={input}>
-      {(Object.keys(METHODS) as Method[]).map((m) => (
+      {(Object.keys(METHODS) as Method[]).filter((m) => m !== "avoir").map((m) => (
         <option key={m} value={m}>
           {METHODS[m]}
         </option>
@@ -470,7 +470,10 @@ export function SaleForm({ sale, preItem, onClose, onSaved }: { sale?: Sale; pre
   const [name, setName] = useState(sale?.customer.name ?? "");
   const [phone, setPhone] = useState(sale?.customer.phone ?? "");
   const [date, setDate] = useState(sale?.date ?? today());
-  const [lines, setLines] = useState(sale?.lines ?? (preItem ? [{ itemId: preItem, price: itemPrice(preItem) }] : []));
+  // Returned lines are managed in the Retours tab and kept by the server.
+  const [lines, setLines] = useState(
+    sale ? sale.lines.filter((l) => !l.returned).map(({ itemId, price }) => ({ itemId, price })) : preItem ? [{ itemId: preItem, price: itemPrice(preItem) }] : [],
+  );
   const [discount, setDiscount] = useState(String(sale?.discount ?? 0));
   const [rate, setRate] = useState(sale?.rate ? String(sale.rate) : "");
   const [note, setNote] = useState(sale?.note ?? "");

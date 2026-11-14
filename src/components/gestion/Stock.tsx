@@ -37,6 +37,7 @@ export default function Stock() {
           <option value="reserve">Réservées</option>
           <option value="vendu">Vendues</option>
           <option value="vendu_encours">Vendues, paiement en cours</option>
+          <option value="sav">En SAV (défaut)</option>
           <option value="retire">Retirées</option>
           <option value="tout">Tous les articles</option>
         </select>
@@ -64,6 +65,7 @@ export default function Stock() {
                   {i.item.minPrice ? ` (min ${F(i.item.minPrice)})` : ""}
                   {i.sale ? ` · vendue ${F(i.soldPrice ?? 0)} à ${i.sale.customer.name}` : ""}
                   {i.item.note ? ` · ${i.item.note}` : ""}
+                  {i.returns.length ? ` · retour ${i.returns.map((r) => `R-${String(r.number).padStart(3, "0")}`).join(", ")}` : ""}
                 </p>
               </div>
               <Badge tone={stateTone(i.state)}>{ITEM_STATE[i.state]}</Badge>
@@ -77,6 +79,11 @@ export default function Stock() {
                     {i.state !== "retire" && (
                       <Btn kind="primary" onClick={() => go("ventes", { sellItem: i.item.id })}>
                         Vendre
+                      </Btn>
+                    )}
+                    {(i.state === "stock" || i.state === "reserve") && (
+                      <Btn kind="link" onClick={() => go("retours", { reportItem: i.item.id })}>
+                        Signaler un défaut
                       </Btn>
                     )}
                     <Btn kind="link" onClick={() => setEditing(i.item)}>

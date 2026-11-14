@@ -42,6 +42,11 @@ Espace interne pour Lisa et Yvaltt, avec le même mot de passe que l'admin :
 - **Caisse et dépenses** : toutes les entrées et sorties. L'argent des ventes va dans la « caisse » (commune) ;
   une dépense payée de sa poche compte comme l'apport de la personne.
 - **Associés** : apports de chacun et somme à verser pour être à égalité (tout est partagé à moitié).
+- **Retours** : perruque défectueuse rapportée par une cliente (échange, avoir, remboursement, réparation) ou
+  repérée en stock ; suivi de la perruque (SAV, remise en vente, renvoyée au fournisseur, perte) et de la
+  réclamation au fournisseur. Un remboursement du fournisseur baisse le coût de l'article ; une perte est déduite du
+  bénéfice. Un avoir (trop-perçu après un retour) s'utilise sur une autre vente ou se rembourse. Annuler un retour
+  remet la vente et le stock comme avant.
 - Le bouton « Importer mes 4 commandes » (tableau de bord, gestion vide seulement) charge les commandes d'avant le
   site depuis `src/lib/gestion/seed.ts`.
 

@@ -150,5 +150,5 @@ export function seedData(date: string): GestionData {
     receivedBy: "lisa",
   }));
 
-  return { orders, items, sales, moves: [...expenses, settle, ...pays] };
+  return { orders, items, sales, moves: [...expenses, settle, ...pays], returns: [] };
 }

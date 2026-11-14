@@ -6,6 +6,7 @@ import {
   type Order,
   type Partner,
   type Payment,
+  type Return,
   type Sale,
   type Tranche,
   type Transfer,
@@ -29,8 +30,11 @@ export const fmtDate = (date: string) =>
 
 export const invoiceNumber = (s: Pick<Sale, "number" | "date">) => `F${s.date.slice(0, 4)}-${String(s.number).padStart(3, "0")}`;
 
+/** Price of the lines still sold (returned ones excluded), minus the discount. */
 export const saleTotal = (s: Pick<Sale, "lines" | "discount">) =>
-  s.lines.reduce((sum, l) => sum + l.price, 0) - (s.discount || 0);
+  Math.max(0, s.lines.filter((l) => !l.returned).reduce((sum, l) => sum + l.price, 0) - (s.discount || 0));
+
+export const returnNumber = (r: Pick<Return, "number">) => `R-${String(r.number).padStart(3, "0")}`;
 
 /** Schedule actually used: no tranches means everything is due on the sale date. */
 export const effectiveSchedule = (s: Sale): Tranche[] =>
@@ -49,6 +53,8 @@ export interface SaleInfo {
   total: number;
   paid: number;
   remaining: number;
+  /** Paid more than the total (after a return): credit the customer can use or get back */
+  credit: number;
   /** Amount that should already have been paid and was not */
   overdue: number;
   /** Next tranche not yet covered, with what is left to pay on it */
@@ -59,11 +65,12 @@ export interface SaleInfo {
   margin: number;
 }
 
-export type ItemState = "stock" | "reserve" | "retire" | "vendu" | "vendu_encours";
+export type ItemState = "stock" | "reserve" | "retire" | "sav" | "vendu" | "vendu_encours";
 export const ITEM_STATE: Record<ItemState, string> = {
   stock: "En stock",
   reserve: "Réservée",
   retire: "Retirée",
+  sav: "En SAV (défaut)",
   vendu: "Vendue (payée)",
   vendu_encours: "Vendue (paiement en cours)",
 };
@@ -76,6 +83,8 @@ export interface ItemInfo {
   state: ItemState;
   sale?: Sale;
   soldPrice?: number;
+  /** Returns (defects) concerning this article, newest first */
+  returns: Return[];
 }
 
 export interface OrderInfo {
@@ -137,7 +146,8 @@ export function analyze(data: GestionData, on = today()) {
     const linked = expenses.filter((e) => orderOf(e) === order.id);
     const itemsUsd = items.reduce((s, i) => s + i.costUsd, 0);
     const estimatedSupplier = r(Math.max(0, itemsUsd - order.discountUsd) * order.rate);
-    const supplierPaid = linked.filter((e) => e.category === "fournisseur").reduce((s, e) => s + e.amount, 0);
+    // Money for one article only (repairs, supplier refunds of a defect) stays on that article.
+    const supplierPaid = linked.filter((e) => e.category === "fournisseur" && !e.itemId).reduce((s, e) => s + e.amount, 0);
     const supplierCost = order.settled ? supplierPaid : Math.max(supplierPaid, estimatedSupplier);
     const pooled = linked.filter((e) => e.category !== "fournisseur" && !e.itemId).reduce((s, e) => s + e.amount, 0);
     const perItem = linked.filter((e) => e.itemId).reduce((s, e) => s + e.amount, 0);
@@ -175,6 +185,7 @@ export function analyze(data: GestionData, on = today()) {
     );
     let cum = 0;
     let next: Tranche | undefined;
+    const active = sale.lines.filter((l) => !l.returned);
     for (const t of sched) {
       cum += t.amount;
       if (cum > paid) {
@@ -185,13 +196,14 @@ export function analyze(data: GestionData, on = today()) {
     const remaining = total - paid;
     const overdue = Math.max(0, dueByNow - paid);
     const status: SaleStatus = remaining <= 0 ? "payee" : overdue > 0 ? "retard" : paid > 0 ? "partielle" : "attente";
-    const cost = sale.lines.reduce((s, l) => s + (itemCost.get(l.itemId) ?? 0), 0);
-    for (const l of sale.lines) itemSale.set(l.itemId, { sale, price: l.price });
+    const cost = active.reduce((s, l) => s + (itemCost.get(l.itemId) ?? 0), 0);
+    for (const l of active) itemSale.set(l.itemId, { sale, price: l.price });
     saleInfo.set(sale.id, {
       sale,
       total,
       paid,
       remaining,
+      credit: Math.max(0, -remaining),
       overdue,
       next: remaining > 0 ? next : undefined,
       status,
@@ -217,6 +229,7 @@ export function analyze(data: GestionData, on = today()) {
       state,
       sale: sold?.sale,
       soldPrice: sold?.price,
+      returns: (data.returns ?? []).filter((r) => r.itemId === item.id),
     });
   }
 
@@ -289,6 +302,9 @@ export function analyze(data: GestionData, on = today()) {
   const received = payments.reduce((s, p) => s + p.amount, 0);
   const cogs = sales.reduce((s, x) => s + x.cost, 0);
   const inStock = items.filter((i) => i.state === "stock" || i.state === "reserve");
+  const lost = items.filter((i) => i.state === "retire");
+  const inSav = items.filter((i) => i.state === "sav");
+  const losses = lost.reduce((s, i) => s + i.cost, 0);
   const totals = {
     invested,
     investedOrders: invested - general,
@@ -299,7 +315,13 @@ export function analyze(data: GestionData, on = today()) {
     overdue: sales.reduce((s, x) => s + x.overdue, 0),
     cogs,
     grossMargin: revenue - cogs,
-    netProfit: revenue - cogs - general,
+    netProfit: revenue - cogs - general - losses,
+    losses,
+    lostCount: lost.length,
+    savCount: inSav.length,
+    savCost: inSav.reduce((s, i) => s + i.cost, 0),
+    credits: sales.reduce((s, x) => s + x.credit, 0),
+    openReturns: (data.returns ?? []).filter((r) => !r.closed).length,
     soldCount: items.filter((i) => i.sale).length,
     stockCount: inStock.length,
     stockCost: inStock.reduce((s, i) => s + i.cost, 0),
@@ -318,8 +340,9 @@ export function analyze(data: GestionData, on = today()) {
     row[key] += amount;
     months.set(m, row);
   };
-  for (const p of payments) bump(p.date, "in", p.amount);
-  for (const e of expenses) bump(e.date, "out", e.amount);
+  // Refunds count as money out, supplier refunds as money in; credits moved between sales are not money.
+  for (const p of payments) if (p.method !== "avoir") bump(p.date, p.amount >= 0 ? "in" : "out", Math.abs(p.amount));
+  for (const e of expenses) bump(e.date, e.amount >= 0 ? "out" : "in", Math.abs(e.amount));
   const monthly = [...months.values()].sort((a, b) => a.month.localeCompare(b.month));
 
   // --- What customers still owe
@@ -327,13 +350,14 @@ export function analyze(data: GestionData, on = today()) {
     .filter((s) => s.remaining > 0)
     .sort((a, b) => (a.next?.date ?? "").localeCompare(b.next?.date ?? ""));
 
-  const customers = new Map<string, { name: string; phone: string; count: number; total: number; remaining: number }>();
+  const customers = new Map<string, { name: string; phone: string; count: number; total: number; remaining: number; credit: number }>();
   for (const s of sales) {
     const key = s.sale.customer.phone.replace(/\D/g, "") || s.sale.customer.name.toLowerCase();
-    const c = customers.get(key) ?? { name: s.sale.customer.name, phone: s.sale.customer.phone, count: 0, total: 0, remaining: 0 };
-    c.count += s.sale.lines.length;
+    const c = customers.get(key) ?? { name: s.sale.customer.name, phone: s.sale.customer.phone, count: 0, total: 0, remaining: 0, credit: 0 };
+    c.count += s.sale.lines.filter((l) => !l.returned).length;
     c.total += s.total;
     c.remaining += Math.max(0, s.remaining);
+    c.credit += s.credit;
     customers.set(key, c);
   }
 

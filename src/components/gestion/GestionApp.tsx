@@ -10,6 +10,7 @@ import Dues from "./Dues";
 import Money from "./Money";
 import Orders from "./Orders";
 import Partners from "./Partners";
+import Returns from "./Returns";
 import Sales from "./Sales";
 import Stock from "./Stock";
 import { GestionContext, type Intent, type Tab } from "./ui";
@@ -20,6 +21,7 @@ const TABS: [Tab, string][] = [
   ["stock", "Stock"],
   ["ventes", "Ventes"],
   ["echeances", "Échéances"],
+  ["retours", "Retours"],
   ["caisse", "Caisse et dépenses"],
   ["associes", "Associés"],
 ];
@@ -125,6 +127,9 @@ export default function GestionApp({
                 {t === "echeances" && overdueCount > 0 && (
                   <span className="ml-2 rounded-full bg-wine px-1.5 text-xs text-white">{overdueCount}</span>
                 )}
+                {t === "retours" && a.totals.openReturns > 0 && (
+                  <span className="ml-2 rounded-full bg-gold px-1.5 text-xs text-ink">{a.totals.openReturns}</span>
+                )}
               </button>
             ))}
           </div>
@@ -136,6 +141,7 @@ export default function GestionApp({
           {tab === "stock" && <Stock />}
           {tab === "ventes" && <Sales />}
           {tab === "echeances" && <Dues />}
+          {tab === "retours" && <Returns />}
           {tab === "caisse" && <Money />}
           {tab === "associes" && <Partners />}
         </div>

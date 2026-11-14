@@ -5,10 +5,10 @@ import type { Analysis } from "@/lib/gestion/compute";
 import type { GestionData, Partner } from "@/lib/gestion/types";
 import { fmtFcfa } from "@/lib/pricing";
 
-export type Tab = "bord" | "commandes" | "stock" | "ventes" | "echeances" | "caisse" | "associes";
+export type Tab = "bord" | "commandes" | "stock" | "ventes" | "echeances" | "retours" | "caisse" | "associes";
 
 /** What another tab asked for (e.g. "sell this article"). */
-export type Intent = { sellItem?: string; openSale?: string; openOrder?: string } | null;
+export type Intent = { sellItem?: string; openSale?: string; openOrder?: string; reportItem?: string } | null;
 
 export interface Ctx {
   data: GestionData;
