@@ -30,6 +30,24 @@ Autres fonctions :
 
 Tout se modifie dans `/admin` → *Prix fournisseurs* et *Réglages*.
 
+## Gestion des ventes (`/admin/gestion`)
+
+Espace interne pour Lisa et Yvaltt, avec le même mot de passe que l'admin :
+
+- **Commandes** : chaque facture fournisseur, son taux du dollar, ses articles (une ligne par perruque), qui a payé
+  le fournisseur et le transport. Le coût de revient de chaque article répartit le coût total de la commande selon
+  son prix fournisseur.
+- **Ventes** : cliente, téléphone, articles (toujours liés à leur commande), paiement total ou par tranches avec
+  échéances, facture à envoyer sur WhatsApp (lien `/facture/…` signé) et relances WhatsApp en un clic.
+- **Caisse et dépenses** : toutes les entrées et sorties. L'argent des ventes va dans la « caisse » (commune) ;
+  une dépense payée de sa poche compte comme l'apport de la personne.
+- **Associés** : apports de chacun et somme à verser pour être à égalité (tout est partagé à moitié).
+- Le bouton « Importer mes 4 commandes » (tableau de bord, gestion vide seulement) charge les commandes d'avant le
+  site depuis `src/lib/gestion/seed.ts`.
+
+Données dans Upstash Redis (`gestion:orders`, `gestion:items`, `gestion:sales`, `gestion:moves`), calculs dans
+`src/lib/gestion/compute.ts`.
+
 ## Déployer sur Vercel
 
 1. Créez un dépôt **vide** sur github.com, puis envoyez-y le code :

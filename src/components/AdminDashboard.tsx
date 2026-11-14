@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { fmtFcfa, fmtUsd } from "@/lib/pricing";
 import { CLOSURE_SIZES, LENGTHS, type Config, type PriceRow } from "@/lib/types";
@@ -193,9 +194,14 @@ export default function AdminDashboard({
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-3xl font-bold text-plum">Espace admin</h1>
-        <button onClick={logout} className="text-sm text-wine underline">
-          Se déconnecter
-        </button>
+        <div className="flex items-center gap-4">
+          <Link href="/admin/gestion" className="rounded-full bg-plum px-4 py-2 text-sm font-semibold text-gold-soft hover:bg-plum-2">
+            Gestion des ventes
+          </Link>
+          <button onClick={logout} className="text-sm text-wine underline">
+            Se déconnecter
+          </button>
+        </div>
       </div>
 
       {!storageReady && (
