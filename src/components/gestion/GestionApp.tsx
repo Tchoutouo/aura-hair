@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { analyze } from "@/lib/gestion/compute";
 import { PARTNER_NAMES, PARTNERS, type GestionData, type Partner } from "@/lib/gestion/types";
+import { InstallButton } from "../Pwa";
 import Dashboard from "./Dashboard";
 import Dues from "./Dues";
 import Money from "./Money";
@@ -86,6 +87,7 @@ export default function GestionApp({
               Espace admin
             </Link>
             <h1 className="font-display text-3xl font-bold text-plum">Gestion des ventes</h1>
+            <InstallButton className="mt-2" />
           </div>
           <div role="group" aria-label="Qui utilise l'appli" className="flex items-center gap-2 text-sm">
             <span className="text-muted">Je suis</span>

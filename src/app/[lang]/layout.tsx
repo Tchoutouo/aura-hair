@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { Analytics } from "@vercel/analytics/next";
 import { getDict, isLang, LANGS } from "@/i18n";
@@ -6,6 +6,7 @@ import { getConfig } from "@/lib/store";
 import SiteFooter from "@/components/SiteFooter";
 import ShipBanner from "@/components/ShipBanner";
 import SiteHeader from "@/components/SiteHeader";
+import { PwaRegister } from "@/components/Pwa";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { display, sans } from "../fonts";
 import "../globals.css";
@@ -16,6 +17,7 @@ export const generateStaticParams = () => LANGS.map((lang) => ({ lang }));
 export const dynamicParams = false;
 // Prices, numbers and footer contacts come from the admin settings: always render fresh.
 export const dynamic = "force-dynamic";
+export const viewport: Viewport = { themeColor: "#3b2230" };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang } = await params;
@@ -37,6 +39,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [{ url: `/og-${l}.jpg`, width: 1200, height: 630, alt: t.title }],
     },
     twitter: { card: "summary_large_image", title: t.title, description: t.description, images: [`/og-${l}.jpg`] },
+    // Installable on phones: manifest linked in <head> below, service worker in public/sw.js.
+    appleWebApp: { capable: true, title: "Aurahair", statusBarStyle: "default" },
+    icons: { apple: "/icons/site-apple-180.png" },
   };
 }
 
@@ -53,6 +58,10 @@ export default async function LangLayout({ children, params }: Props) {
   const config = await getConfig();
   return (
     <html lang={lang} className={`${display.variable} ${sans.variable}`}>
+      {/* In <head> on purpose: Next can stream metadata into <body>, where Chrome ignores the manifest. */}
+      <head>
+        <link rel="manifest" href="/site.webmanifest" />
+      </head>
       <body className="flex min-h-screen flex-col antialiased">
         <ShipBanner lang={lang} config={config} />
         <SiteHeader lang={lang} />
@@ -60,6 +69,7 @@ export default async function LangLayout({ children, params }: Props) {
         <SiteFooter lang={lang} contacts={config.contacts} />
         <WhatsAppButton lang={lang} phone={config.contacts[0]?.phone} />
         <Analytics />
+        <PwaRegister />
       </body>
     </html>
   );
