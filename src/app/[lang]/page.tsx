@@ -18,6 +18,8 @@ export const dynamic = "force-dynamic";
 
 const featured = ["Body Wave", "Deep Wave", "Kinky Curly", "Loose Wave", "Water Wave", "Pixie Curly", "Bouncy Curly", "Cambodian Wavy"];
 const homeVideos = ["virgin-18-closure-2x6", "bordeaux-lisse", "deep-curly-long", "double-ton-marron"];
+/** Lengths shown on the home page: shoulders, armpits, waist (images in public/guide). */
+const GUIDE_SHOTS = [12, 18, 24] as const;
 
 export default async function Home({ params }: { params: Promise<{ lang: string }> }) {
   const { lang: raw } = await params;
@@ -228,6 +230,36 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
           <Link href={`/${lang}/qualites`} className="justify-self-start rounded-full bg-plum px-6 py-3 font-semibold text-gold-soft hover:bg-plum-2">
             {t.qualitiesLink}
           </Link>
+        </div>
+      </section>
+
+      {/* Length guide: three snapshots of the 3D mannequin, each opening the guide on that length */}
+      <section className="mx-auto max-w-6xl px-4 pt-16">
+        <div className="grid items-center gap-8 md:grid-cols-[1fr_1.4fr]">
+          <div className="space-y-4">
+            <p className="text-sm font-semibold text-rust">{t.lengthKicker}</p>
+            <h2 className="font-display text-3xl font-bold text-plum md:text-4xl">{t.lengthTitle}</h2>
+            <p className="text-muted">{t.lengthText}</p>
+            <Link href={`/${lang}/longueurs`} className="inline-block rounded-full bg-plum px-6 py-3 font-semibold text-gold-soft hover:bg-plum-2">
+              {t.lengthCta}
+            </Link>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {GUIDE_SHOTS.map((l) => (
+              <Link key={l} href={`/${lang}/longueurs?l=${l}`} className="group rounded-xl border border-line bg-white p-2 hover:border-plum">
+                <Image
+                  src={`/guide/longueur-${l}.jpg`}
+                  alt={t.lengthAlt(l, d.guide.landmarks[l])}
+                  width={600}
+                  height={750}
+                  sizes="(min-width: 768px) 20vw, 30vw"
+                  className="aspect-[4/5] w-full rounded-lg object-cover"
+                />
+                <p className="mt-2 text-center font-display text-2xl font-bold text-plum">{l}&quot;</p>
+                <p className="pb-1 text-center text-xs text-muted group-hover:text-plum">{d.guide.landmarks[l]}</p>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

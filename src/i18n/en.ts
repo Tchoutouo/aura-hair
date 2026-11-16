@@ -27,6 +27,7 @@ const en: Dict = {
     contact: "Contact",
     suivi: "Tracking",
     dispo: "Available",
+    longueurs: "3D lengths",
     cta: "Get my price",
     switchLabel: "Site language",
   },
@@ -253,6 +254,12 @@ const en: Dict = {
     qualitiesText:
       "Hair grade names change everything about price and result. We explain each one plainly so you can choose with confidence.",
     qualitiesLink: "Read the hair grade guide",
+    lengthKicker: "New: 3D mannequin",
+    lengthTitle: "Which length should you choose?",
+    lengthText:
+      "Inches don't always say much. On our 3D mannequin you see where each length falls, straight or curly, and you can turn it to see it from the back.",
+    lengthCta: "Try the 3D mannequin",
+    lengthAlt: (l: number, place: string) => `${l}-inch wig on the mannequin: ${place}`,
     texturesTitle: "Our textures",
     texturesLink: (n: number) => `See all ${n} textures`,
     closuresTitle: "Closures and frontals",

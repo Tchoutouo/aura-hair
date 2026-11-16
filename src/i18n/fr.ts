@@ -25,6 +25,7 @@ const fr = {
     contact: "Contact",
     suivi: "Suivi",
     dispo: "Disponibles",
+    longueurs: "Longueurs 3D",
     cta: "Calculer mon prix",
     switchLabel: "Langue du site",
   },
@@ -251,6 +252,12 @@ const fr = {
     qualitiesText:
       "Les noms des qualités changent tout au prix et au rendu. Nous expliquons simplement chacune, pour que vous choisissiez en connaissance de cause.",
     qualitiesLink: "Lire le guide des qualités",
+    lengthKicker: "Nouveau : mannequin 3D",
+    lengthTitle: "Quelle longueur choisir ?",
+    lengthText:
+      "En pouces, ce n'est pas toujours parlant. Sur notre mannequin 3D, vous voyez où tombe chaque longueur, en lisse comme en bouclé, et vous le faites tourner pour la voir de dos.",
+    lengthCta: "Essayer le mannequin 3D",
+    lengthAlt: (l: number, place: string) => `Perruque de ${l} pouces sur le mannequin : ${place}`,
     texturesTitle: "Nos textures",
     texturesLink: (n: number) => `Voir les ${n} textures`,
     closuresTitle: "Closures et frontals",

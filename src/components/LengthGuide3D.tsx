@@ -69,15 +69,18 @@ const volume = (y: number, end: number, curly: boolean) => {
 /** Sides end a little higher than the middle of the back: rounded ends. */
 const endFor = (phi: number, end: number) => end + ((1 - (1 + Math.cos(phi - Math.PI * 1.5)) / 2) * Math.min(2.6, (CROWN - end) * 0.11));
 
-export default function LengthGuide3D({ lang }: { lang: Lang }) {
+export default function LengthGuide3D({ lang, initialLength = 18 }: { lang: Lang; initialLength?: number }) {
   const t = getDict(lang).guide;
   const mount = useRef<HTMLDivElement>(null);
-  const [length, setLength] = useState(18);
+  const [length, setLength] = useState(initialLength);
   const [curly, setCurly] = useState(false);
   const [color, setColor] = useState<Color>("noir");
   const [noWebgl, setNoWebgl] = useState(false);
   // The scene lives outside React; this updates its hair.
   const setHair = useRef<((l: number, curly: boolean, color: Color) => void) | null>(null);
+  // Latest choice, so the scene starts with it once three.js has loaded.
+  const choice = useRef({ length, curly, color });
+  choice.current = { length, curly, color };
 
   useEffect(() => {
     let disposed = false;
@@ -101,9 +104,10 @@ export default function LengthGuide3D({ lang }: { lang: Lang }) {
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(30, 1, 1, 400);
-      camera.position.set(-58, 53, -48);
+      // Far enough back that the whole figure fits, with room above the head.
+      camera.position.set(-64, 55, -53);
       const controls = new OrbitControls(camera, renderer.domElement);
-      controls.target.set(0, 45, 0);
+      controls.target.set(0, 46.5, 0);
       controls.enablePan = false;
       controls.enableDamping = true;
       controls.minDistance = 55;
@@ -257,7 +261,7 @@ export default function LengthGuide3D({ lang }: { lang: Lang }) {
         ring.position.y = end;
         ring.scale.set(Math.max(hairRow(end).rx, bodyRx(end)) + 0.6, Math.max(hairRow(end).rz, bodyRz(end)) + 0.6, 1);
       };
-      setHair.current(18, false, "noir");
+      setHair.current(choice.current.length, choice.current.curly, choice.current.color);
 
       const resize = () => {
         const w = el.clientWidth;

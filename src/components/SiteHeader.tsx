@@ -16,6 +16,7 @@ export default function SiteHeader({ lang }: { lang: Lang }) {
           <Link href={`/${lang}/disponibles`} className={`hidden sm:inline font-semibold text-plum ${link}`}>{t.dispo}</Link>
           <Link href={`/${lang}/textures`} className={`hidden lg:inline ${link}`}>{t.textures}</Link>
           <Link href={`/${lang}/qualites`} className={`hidden md:inline ${link}`}>{t.qualites}</Link>
+          <Link href={`/${lang}/longueurs`} className={`hidden lg:inline ${link}`}>{t.longueurs}</Link>
           <Link href={`/${lang}/galerie`} className={`hidden lg:inline ${link}`}>{t.galerie}</Link>
           <Link href={`/${lang}/suivi`} className={`hidden sm:inline ${link}`}>{t.suivi}</Link>
           <Link href={`/${lang}/contact`} className={`hidden lg:inline ${link}`}>{t.contact}</Link>
