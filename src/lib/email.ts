@@ -4,7 +4,14 @@ import "server-only";
  * Sends an e-mail through Resend (plain text, or the given HTML). Returns false when e-mail is not configured.
  * Without a domain verified at Resend, mail can only go to the Resend account's own address.
  */
-export async function sendEmail(to: string, subject: string, text: string, replyTo?: string, htmlBody?: string): Promise<boolean> {
+export async function sendEmail(
+  to: string,
+  subject: string,
+  text: string,
+  replyTo?: string,
+  htmlBody?: string,
+  attachments?: { filename: string; content: string }[],
+): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!key || !to) return false;
   const from = process.env.RESEND_FROM || "Aurahair <onboarding@resend.dev>";
@@ -18,7 +25,16 @@ export async function sendEmail(to: string, subject: string, text: string, reply
   const res = await fetch(process.env.RESEND_API_URL || "https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [to], subject, text: text.replace(/\*/g, ""), html, ...(replyTo ? { reply_to: replyTo } : {}) }),
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject,
+      text: text.replace(/\*/g, ""),
+      html,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+      // Base64 content.
+      ...(attachments?.length ? { attachments } : {}),
+    }),
   });
   if (!res.ok) console.error("Resend error", res.status, await res.text());
   return res.ok;

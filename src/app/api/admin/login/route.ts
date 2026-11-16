@@ -23,16 +23,19 @@ export async function POST(req: Request) {
   const { password } = (await req.json().catch(() => ({}))) as { password?: string };
   // Small delay to slow down guessing.
   await new Promise((r) => setTimeout(r, 400));
-  if (!password || !checkPassword(password)) {
+  const who = password ? checkPassword(password) : null;
+  if (!who) {
     return NextResponse.json({ error: "Mot de passe incorrect." }, { status: 401 });
   }
+  const name = who === "yvaltt" ? "Yvaltt" : who === "lisa" ? "Lisa" : "";
   notify(req, {
-    subject: "Connexion à l'espace admin",
-    title: "Quelqu'un s'est connecté à l'espace admin",
+    subject: `Connexion à l'espace admin${name ? ` : ${name}` : ""}`,
+    title: name ? `Connexion de ${name} à l'espace admin` : "Connexion à l'espace admin avec le mot de passe commun",
+    actor: name || "Mot de passe commun",
     lines: ["Si ce n'était ni Lisa ni Yvaltt, changez le mot de passe admin (ADMIN_PASSWORD) dans Vercel puis redéployez."],
   });
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(ADMIN_COOKIE, sessionToken(), {
+  res.cookies.set(ADMIN_COOKIE, sessionToken(who), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",

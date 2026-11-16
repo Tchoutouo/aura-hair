@@ -78,6 +78,10 @@ export interface Item {
   /** Manual status; "sold" comes from sales */
   status: ItemStatus;
   note?: string;
+  /** Photos (Vercel Blob addresses) */
+  photos?: string[];
+  /** Shown on the public "available now" page (default: yes once it has a price) */
+  online?: boolean;
 }
 
 export interface Tranche {

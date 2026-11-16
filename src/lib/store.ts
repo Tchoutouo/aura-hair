@@ -10,6 +10,7 @@ const ORDERS_KEY = "aura:orders";
 const REQUESTS_KEY = "aura:requests";
 const TRACKING_KEY = "aura:tracking";
 const REVIEWS_KEY = "aura:reviews";
+const WAITLIST_KEY = "aura:waitlist";
 
 let client: Redis | null | undefined;
 
@@ -85,7 +86,7 @@ export async function listOrders(): Promise<StoredOrder[]> {
   }
 }
 
-export type RequestSubject = "products" | "visa" | "exchange" | "other";
+export type RequestSubject = "products" | "visa" | "exchange" | "other" | "reservation";
 
 /** A message from the contact form (other services: purchases, visa, exchange…). */
 export interface StoredRequest {
@@ -158,6 +159,8 @@ export interface Review {
   text: string;
   lang: Lang;
   status: "pending" | "approved";
+  /** Customer's photo (Vercel Blob address) */
+  photo?: string;
 }
 
 export async function listReviews(): Promise<Review[]> {
@@ -182,4 +185,59 @@ export async function deleteReview(id: string): Promise<void> {
   const db = redis();
   if (!db) throw new Error("Stockage non configuré (Upstash Redis).");
   await db.hdel(REVIEWS_KEY, id);
+}
+
+/** Someone who wants a WhatsApp message when the next parcel arrives. */
+export interface WaitlistEntry {
+  id: string;
+  createdAt: string;
+  name: string;
+  phone: string;
+  wish?: string;
+  lang: Lang;
+  notifiedAt?: string;
+}
+
+export async function listWaitlist(): Promise<WaitlistEntry[]> {
+  const db = redis();
+  if (!db) return [];
+  try {
+    const all = (await db.hgetall<Record<string, WaitlistEntry>>(WAITLIST_KEY)) ?? {};
+    return Object.values(all).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  } catch (e) {
+    console.error("Redis listWaitlist failed", e);
+    return [];
+  }
+}
+
+export async function saveWaitlist(w: WaitlistEntry): Promise<void> {
+  const db = redis();
+  if (!db) throw new Error("Stockage non configuré (Upstash Redis).");
+  await db.hset(WAITLIST_KEY, { [w.id]: w });
+}
+
+export async function deleteWaitlist(id: string): Promise<void> {
+  const db = redis();
+  if (!db) throw new Error("Stockage non configuré (Upstash Redis).");
+  await db.hdel(WAITLIST_KEY, id);
+}
+
+/** Everything the site stores, for the nightly backup e-mail. */
+export async function dumpAll(): Promise<Record<string, unknown>> {
+  const db = redis();
+  if (!db) return {};
+  const hashes = [TRACKING_KEY, REVIEWS_KEY, WAITLIST_KEY, "gestion:orders", "gestion:items", "gestion:sales", "gestion:moves", "gestion:returns"];
+  const [config, orders, requests, ...rest] = await Promise.all([
+    db.get(CONFIG_KEY),
+    db.lrange(ORDERS_KEY, 0, -1),
+    db.lrange(REQUESTS_KEY, 0, -1),
+    ...hashes.map((k) => db.hgetall(k)),
+  ]);
+  return {
+    savedAt: new Date().toISOString(),
+    [CONFIG_KEY]: config,
+    [ORDERS_KEY]: orders,
+    [REQUESTS_KEY]: requests,
+    ...Object.fromEntries(hashes.map((k, i) => [k, rest[i] ?? {}])),
+  };
 }

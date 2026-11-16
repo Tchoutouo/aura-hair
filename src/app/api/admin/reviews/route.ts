@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/auth";
+import { deletePhotos } from "@/lib/photos";
 import { deleteReview, listReviews, saveReview } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -11,7 +12,10 @@ export async function PUT(req: Request) {
   const review = (await listReviews()).find((r) => r.id === body?.id);
   if (!review) return NextResponse.json({ error: "Avis introuvable." }, { status: 404 });
   try {
-    if (body?.action === "delete") await deleteReview(review.id);
+    if (body?.action === "delete") {
+      await deleteReview(review.id);
+      await deletePhotos(review.photo ? [review.photo] : []);
+    }
     else if (body?.action === "approve") await saveReview({ ...review, status: "approved" });
     else return NextResponse.json({ error: "Action inconnue." }, { status: 400 });
   } catch (e) {

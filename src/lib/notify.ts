@@ -11,6 +11,8 @@ export interface Notice {
   rows?: [string, string][];
   /** Free lines (order text, list of articles…) */
   lines?: string[];
+  /** Titled blocks, for longer e-mails such as the morning summary */
+  sections?: { title: string; rows?: [string, string][]; lines?: string[] }[];
   link?: { label: string; url: string };
   /** Who did it (a partner in the management app, or the customer) */
   actor?: string;
@@ -86,24 +88,29 @@ export function requestPlace(req: Request) {
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-function render(n: Notice, ctx: ReturnType<typeof requestPlace>, when: string) {
+function render(n: Notice, ctx: ReturnType<typeof requestPlace> | null, when: string) {
   const context: [string, string][] = [
     ...(n.actor ? ([["Par", n.actor]] as [string, string][]) : []),
     ["Date", when],
-    ["Lieu approximatif", ctx.place],
-    ["Appareil", ctx.device],
-    ["Adresse IP", ctx.ip],
+    ...(ctx
+      ? ([
+          ["Lieu approximatif", ctx.place],
+          ["Appareil", ctx.device],
+          ["Adresse IP", ctx.ip],
+        ] as [string, string][])
+      : []),
   ];
   const text = [
     n.title,
     "",
     ...(n.rows ?? []).map(([k, v]) => `${k} : ${v}`),
     ...(n.lines?.length ? ["", ...n.lines] : []),
+    ...(n.sections ?? []).flatMap((s) => ["", s.title.toUpperCase(), ...(s.rows ?? []).map(([k, v]) => `${k} : ${v}`), ...(s.lines ?? [])]),
     ...(n.link ? ["", `${n.link.label} : ${n.link.url}`] : []),
     "",
     "—",
     ...context.map(([k, v]) => `${k} : ${v}`),
-    ...(ctx.map ? [`Carte : ${ctx.map}`] : []),
+    ...(ctx?.map ? [`Carte : ${ctx.map}`] : []),
   ].join("\n");
 
   const table = (rows: [string, string][], muted = false) =>
@@ -115,15 +122,20 @@ function render(n: Notice, ctx: ReturnType<typeof requestPlace>, when: string) {
           )
           .join("")}</table>`
       : "";
+  const pre = (lines: string[]) =>
+    `<pre style="font-family:inherit;white-space:pre-wrap;font-size:14px;background:#fbf7f2;padding:12px;border-radius:8px;margin:12px 0 0">${esc(lines.join("\n").replace(/\*/g, ""))}</pre>`;
   const html = `<div style="font-family:Arial,sans-serif;color:#2a1e24;max-width:600px;margin:0 auto">
   <div style="background:#3b2230;color:#f6e7c8;padding:16px 20px;border-radius:12px 12px 0 0;font-size:18px;font-weight:700">${esc(n.title)}</div>
   <div style="border:1px solid #e6d9cb;border-top:0;border-radius:0 0 12px 12px;padding:20px">
     ${table(n.rows ?? [])}
-    ${n.lines?.length ? `<pre style="font-family:inherit;white-space:pre-wrap;font-size:14px;background:#fbf7f2;padding:12px;border-radius:8px;margin:16px 0 0">${esc(n.lines.join("\n").replace(/\*/g, ""))}</pre>` : ""}
+    ${n.lines?.length ? pre(n.lines) : ""}
+    ${(n.sections ?? [])
+      .map((s) => `<h2 style="font-size:16px;color:#3b2230;margin:22px 0 6px">${esc(s.title)}</h2>${table(s.rows ?? [])}${s.lines?.length ? pre(s.lines) : ""}`)
+      .join("")}
     ${n.link ? `<p style="margin:16px 0 0"><a href="${esc(n.link.url)}" style="background:#3b2230;color:#f6e7c8;padding:10px 18px;border-radius:999px;text-decoration:none;font-weight:600">${esc(n.link.label)}</a></p>` : ""}
     <hr style="border:0;border-top:1px solid #e6d9cb;margin:20px 0">
     ${table(context, true)}
-    ${ctx.map ? `<p style="margin:8px 0 0;font-size:13px"><a href="${esc(ctx.map)}" style="color:#3b2230">Voir le lieu approximatif sur la carte</a></p>` : ""}
+    ${ctx?.map ? `<p style="margin:8px 0 0;font-size:13px"><a href="${esc(ctx.map)}" style="color:#3b2230">Voir le lieu approximatif sur la carte</a></p>` : ""}
   </div>
 </div>`;
   return { text: text.replace(/\*/g, ""), html };
@@ -146,4 +158,13 @@ export function notify(req: Request, n: Notice): void {
       console.error("notify failed", e);
     }
   });
+}
+
+/** Sends an e-mail to the owners right away (scheduled jobs: no visitor, no place). */
+export async function mailOwners(n: Notice, attachments?: { filename: string; content: string }[]): Promise<boolean> {
+  const to = process.env.NOTIFY_EMAIL || (await getConfig()).orderEmail || process.env.ORDER_EMAIL_TO;
+  if (!to) return false;
+  const when = new Intl.DateTimeFormat("fr-FR", { dateStyle: "full", timeStyle: "short", timeZone: "Africa/Douala" }).format(new Date());
+  const { text, html } = render(n, null, when);
+  return sendEmail(to, `[Aurahair] ${n.subject}`, text, n.replyTo, html, attachments);
 }

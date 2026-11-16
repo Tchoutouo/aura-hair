@@ -1,11 +1,12 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/auth";
+import { currentAdmin } from "@/lib/auth";
 import { analyze, returnNumber, saleTotal, today } from "@/lib/gestion/compute";
 import { gestionNotice } from "@/lib/gestion/notices";
 import { seedData } from "@/lib/gestion/seed";
 import { invoiceKeys, loadGestion, put, remove } from "@/lib/gestion/store";
 import { notify } from "@/lib/notify";
+import { cleanPhotos, deletePhotos } from "@/lib/photos";
 import {
   CATEGORIES,
   ITEM_STATUS,
@@ -147,8 +148,11 @@ async function handle(action: string, b: Body, data: GestionData): Promise<Recor
         ...(minPrice ? { minPrice } : {}),
         status: (Object.keys(ITEM_STATUS) as ItemStatus[]).includes(i.status as ItemStatus) ? (i.status as ItemStatus) : "stock",
         note: opt(i.note),
+        photos: cleanPhotos(i.photos, 4),
+        online: i.online !== false,
       };
       await put("items", [rec]);
+      await deletePhotos((prev.photos ?? []).filter((u) => !rec.photos!.includes(u)));
       return;
     }
 
@@ -157,6 +161,7 @@ async function handle(action: string, b: Body, data: GestionData): Promise<Recor
       if (used(i.id)) fail("Cet article apparaît dans une vente ou un retour : supprimez-les d'abord.");
       if (data.moves.some((m) => m.kind === "expense" && m.itemId === i.id)) fail("Des dépenses sont liées à cet article.");
       await remove("items", [i.id]);
+      await deletePhotos(i.photos ?? []);
       return;
     }
 
@@ -509,7 +514,8 @@ async function handle(action: string, b: Body, data: GestionData): Promise<Recor
 
 /** All management changes; answers with the fresh data so both partners always see the same numbers. */
 export async function POST(req: Request) {
-  if (!(await isAdmin())) return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+  const who = await currentAdmin();
+  if (!who) return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   const body = (await req.json().catch(() => null)) as Body | null;
   if (!body || typeof body.action !== "string") return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
   try {
@@ -517,7 +523,13 @@ export async function POST(req: Request) {
     const result = await handle(body.action, body, before);
     const data = await loadGestion();
     // E-mail to the owners: who did what, from where.
-    const actor = isPartner(body.actor) ? `${PARTNER_NAMES[body.actor as Partner]} (dans la gestion)` : "Gestion (personne non précisée)";
+    // With personal passwords the session says who it is; with the common one, the "Je suis" choice does.
+    const actor =
+      who !== "shared"
+        ? `${PARTNER_NAMES[who]} (connexion personnelle)`
+        : isPartner(body.actor)
+          ? `${PARTNER_NAMES[body.actor as Partner]} (choisi dans « Je suis »)`
+          : "Gestion (personne non précisée)";
     const notice = gestionNotice(body.action, body, before, data, result, new URL(req.url).origin, actor);
     if (notice) notify(req, notice);
     return NextResponse.json({ ok: true, ...(result ?? {}), data, keys: invoiceKeys(data) });

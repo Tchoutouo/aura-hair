@@ -11,7 +11,6 @@ import {
   closurePrice,
   fmtFcfa,
   fmtKg,
-  fmtUsd,
   quoteCart,
   quoteItem,
 } from "@/lib/pricing";
@@ -138,6 +137,8 @@ export default function OrderBuilder({ prices, initialMode, lang }: { prices: Pr
   const t = getDict(lang).order;
   const [mode, setMode] = useState<Mode>(initialMode);
   const config = prices[mode];
+  // Customers only see FCFA: the dollar rate stays internal.
+  const cfa = (usd: number) => fmtFcfa(Math.round(usd * config.rateFcfaPerUsd));
   const [cart, setCart] = useState<CartItem[]>([]);
 
   // Builder state
@@ -205,7 +206,7 @@ export default function OrderBuilder({ prices, initialMode, lang }: { prices: Pr
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
         {/* Builder */}
-        <section className="space-y-7 rounded-2xl border border-line bg-white p-5 md:p-7">
+        <section className="min-w-0 space-y-7 rounded-2xl border border-line bg-white p-5 md:p-7">
           <h2 className="font-display text-2xl font-bold text-plum">
             {mode === "detail" ? t.myWig : t.addItems}
           </h2>
@@ -234,6 +235,9 @@ export default function OrderBuilder({ prices, initialMode, lang }: { prices: Pr
                 hint={mode === "detail" ? t.bundlesHint(length, bundlesForLength(config, length)) : undefined}
               >
                 <LengthPicker value={length} onChange={setLength} isAvailable={lengthOkBundle} />
+                <a href={`/${lang}/longueurs`} target="_blank" rel="noopener" className="inline-block text-sm font-semibold text-plum underline underline-offset-2">
+                  {getDict(lang).guide.link}
+                </a>
               </Field>
               {mode === "detail" && (
                 <Field label={t.closure}>
@@ -259,7 +263,7 @@ export default function OrderBuilder({ prices, initialMode, lang }: { prices: Pr
                 <Field label={t.mounting} hint={t.mountingHint}>
                   <div className="flex flex-wrap gap-2">
                     <button type="button" aria-pressed={mounting} className={pill(mounting)} onClick={() => setMounting(true)}>
-                      {t.mountingYes(fmtUsd(config.mountingFeeUsd))}
+                      {t.mountingYes(cfa(config.mountingFeeUsd))}
                     </button>
                     <button type="button" aria-pressed={!mounting} className={pill(!mounting)} onClick={() => setMounting(false)}>
                       {t.mountingNo}
@@ -307,13 +311,13 @@ export default function OrderBuilder({ prices, initialMode, lang }: { prices: Pr
               <>
                 <ul className="space-y-1 text-sm">
                   {currentQuote.lines.map((l) => (
-                    <li key={l.label} className="flex justify-between gap-4">
+                    <li key={l.label} className="flex flex-wrap justify-between gap-x-4">
                       <span>
                         {l.label} <span className="text-muted">· {l.detail}</span>
                       </span>
-                      <span className="font-semibold whitespace-nowrap">
-                        {l.qty !== 1 ? `${fmtUsd(l.unitUsd)} × ${getDict(lang).dec(l.qty)} = ` : ""}
-                        {fmtUsd(l.totalUsd)}
+                      <span className="ml-auto font-semibold whitespace-nowrap">
+                        {l.qty !== 1 ? `${cfa(l.unitUsd)} × ${getDict(lang).dec(l.qty)} = ` : ""}
+                        {cfa(l.totalUsd)}
                       </span>
                     </li>
                   ))}
@@ -328,8 +332,7 @@ export default function OrderBuilder({ prices, initialMode, lang }: { prices: Pr
                     {t.productsExcl(fmtKg(currentQuote.weightG / 1000, lang))}
                   </span>
                   <span className="text-right">
-                    <span className="block font-display text-2xl font-bold text-plum">{fmtUsd(currentQuote.usd)}</span>
-                    <span className="text-sm font-semibold text-muted">{fmtFcfa(currentQuote.usd * config.rateFcfaPerUsd)}</span>
+                    <span className="block font-display text-2xl font-bold text-plum">{cfa(currentQuote.usd)}</span>
                   </span>
                 </div>
               </>
@@ -349,7 +352,7 @@ export default function OrderBuilder({ prices, initialMode, lang }: { prices: Pr
         </section>
 
         {/* Cart + checkout */}
-        <aside id="panier" className="scroll-mt-24 lg:sticky lg:top-24 lg:self-start">
+        <aside id="panier" className="min-w-0 scroll-mt-24 lg:sticky lg:top-24 lg:self-start">
           <Cart
             lang={lang}
             config={config}
@@ -363,6 +366,9 @@ export default function OrderBuilder({ prices, initialMode, lang }: { prices: Pr
     </div>
   );
 }
+
+/** FCFA amount of a dollar price, at the shop's rate. */
+const toCfa = (config: Config) => (usd: number) => fmtFcfa(Math.round(usd * config.rateFcfaPerUsd));
 
 function Cart({
   lang,
@@ -380,6 +386,7 @@ function Cart({
   onRemove: (i: number) => void;
 }) {
   const t = getDict(lang).order;
+  const cfa = toCfa(config);
   const [form, setForm] = useState({ name: "", phone: "", city: "", email: "", note: "" });
   const [contact, setContact] = useState(config.contacts[0]?.phone ?? "");
   const [status, setStatus] = useState<{ state: "idle" | "sending" | "done" | "error"; msg?: string; link?: string }>({ state: "idle" });
@@ -424,7 +431,7 @@ function Cart({
                   <p className="text-muted">{it.lines.map((l) => `${l.label} (${l.detail})`).join(" · ")}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold whitespace-nowrap">{fmtUsd(it.usd)}</p>
+                  <p className="font-semibold whitespace-nowrap">{cfa(it.usd)}</p>
                   <button type="button" onClick={() => onRemove(i)} className="text-xs text-wine underline">
                     {t.remove}
                   </button>
@@ -436,7 +443,7 @@ function Cart({
             <div className="flex justify-between gap-2">
               <dt>{t.products}</dt>
               <dd className="text-right font-semibold">
-                {fmtUsd(quote.productsUsd)} <span className="text-muted">· {fmtFcfa(quote.productsFcfa)}</span>
+                {fmtFcfa(quote.productsFcfa)}
               </dd>
             </div>
             <div className="flex justify-between gap-2">
@@ -447,14 +454,13 @@ function Cart({
                 </span>
               </dt>
               <dd className="text-right font-semibold">
-                {fmtFcfa(quote.shippingFcfa)} <span className="block text-xs text-muted">≈ {fmtUsd(quote.shippingUsd)}</span>
+                {fmtFcfa(quote.shippingFcfa)}
               </dd>
             </div>
             <div className="flex items-end justify-between gap-2 border-t border-line pt-2">
               <dt className="font-semibold text-plum">{t.total}</dt>
               <dd className="text-right">
                 <span className="block font-display text-2xl font-bold text-plum">{fmtFcfa(quote.totalFcfa)}</span>
-                <span className="text-sm font-semibold text-muted">{fmtUsd(quote.totalUsd)}</span>
               </dd>
             </div>
           </dl>

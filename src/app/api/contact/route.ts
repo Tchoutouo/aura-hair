@@ -8,7 +8,8 @@ import { getConfig, saveRequest, type RequestSubject } from "@/lib/store";
 
 export const runtime = "nodejs";
 
-const SUBJECTS: RequestSubject[] = ["products", "visa", "exchange", "other"];
+type ContactSubject = Exclude<RequestSubject, "reservation">;
+const SUBJECTS: ContactSubject[] = ["products", "visa", "exchange", "other"];
 const str = (v: unknown, max = 200) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
 export async function POST(req: Request) {
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: t.api.tooManyRequests }, { status: 429 });
   }
 
-  const subject = SUBJECTS.includes(body.subject as RequestSubject) ? (body.subject as RequestSubject) : "other";
+  const subject = SUBJECTS.includes(body.subject as ContactSubject) ? (body.subject as ContactSubject) : "other";
   const name = str(body.name, 100);
   const phone = str(body.phone, 40);
   const message = str(body.message, 2000);

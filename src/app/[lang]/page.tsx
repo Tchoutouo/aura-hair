@@ -1,13 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getDict, isLang } from "@/i18n";
-import { TEXTURES, textureImage } from "@/lib/defaults";
+import { TEXTURES, textureImage, WHATSAPP_CHANNEL } from "@/lib/defaults";
+import { siteUrl } from "@/lib/site";
 import { mediaSrc, VIDEOS } from "@/lib/media";
 import { fmtFcfa } from "@/lib/pricing";
 import { getConfig, listReviews } from "@/lib/store";
 import { CLOSURE_SIZES } from "@/lib/types";
 import ChannelCta from "@/components/ChannelCta";
 import ReviewList from "@/components/ReviewList";
+import WaitlistForm from "@/components/WaitlistForm";
+import AvailableGrid from "@/components/AvailableGrid";
+import { availableWigs } from "@/lib/gestion/available";
 import VideoCard from "@/components/VideoCard";
 
 export const dynamic = "force-dynamic";
@@ -20,12 +24,29 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
   const lang = isLang(raw) ? raw : "fr";
   const d = getDict(lang);
   const t = d.home;
-  const [config, allReviews] = await Promise.all([getConfig(), listReviews()]);
+  const [config, allReviews, wigs] = await Promise.all([getConfig(), listReviews(), availableWigs().catch(() => [])]);
   const reviews = allReviews.filter((r) => r.status === "approved").slice(0, 3);
   const shipVideo = VIDEOS.find((v) => v.id === "colis-pret")!;
 
+  // Google: who Aurahair is, how to reach it, where it delivers.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    name: "Aurahair",
+    description: d.meta.description,
+    url: `${siteUrl()}/${lang}`,
+    logo: `${siteUrl()}/logo.png`,
+    image: `${siteUrl()}/og-${lang}.jpg`,
+    telephone: config.contacts[0]?.phone,
+    areaServed: { "@type": "Country", name: "Cameroun" },
+    currenciesAccepted: "XAF",
+    paymentAccepted: "MTN Mobile Money, Orange Money, Espèces, Virement",
+    sameAs: [WHATSAPP_CHANNEL],
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       {/* Hero */}
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 pt-10 pb-16 md:grid-cols-[1.1fr_1fr] md:pt-16">
         <div className="space-y-6">
@@ -55,6 +76,24 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
           <figcaption className="mt-2 text-sm text-muted">{t.heroCaption}</figcaption>
         </figure>
       </section>
+
+      {/* Wigs in stock, sold straight away */}
+      {wigs.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pb-16">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h2 className="font-display text-3xl font-bold text-plum md:text-4xl">{d.dispo.title}</h2>
+              <p className="mt-2 max-w-2xl text-muted">{d.dispo.lead}</p>
+            </div>
+            <Link href={`/${lang}/disponibles`} className="font-semibold text-plum underline underline-offset-4">
+              {d.dispo.homeLink} ({wigs.length})
+            </Link>
+          </div>
+          <div className="mt-8">
+            <AvailableGrid lang={lang} wigs={wigs.slice(0, 4)} />
+          </div>
+        </section>
+      )}
 
       {/* Trust: the order's journey, with real photos from the warehouse */}
       <section className="bg-plum text-gold-soft">
@@ -229,6 +268,11 @@ export default async function Home({ params }: { params: Promise<{ lang: string 
             {t.closuresCta}
           </Link>
         </div>
+      </section>
+
+      {/* Next arrival alert */}
+      <section className="mx-auto max-w-6xl px-4 pt-16">
+        <WaitlistForm lang={lang} />
       </section>
 
       {/* WhatsApp channel */}

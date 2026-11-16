@@ -33,9 +33,11 @@ export default function SiteFooter({ lang, contacts }: { lang: Lang; contacts: C
         </div>
         <div className="space-y-2 text-sm">
           <p className="font-semibold text-white">{t.links}</p>
+          <p><Link className="hover:underline" href={`/${lang}/disponibles`}>{t.dispo}</Link></p>
           <p><Link className="hover:underline" href={`/${lang}/commander?mode=detail`}>{t.detail}</Link></p>
           <p><Link className="hover:underline" href={`/${lang}/commander?mode=gros`}>{t.gros}</Link></p>
           <p><Link className="hover:underline" href={`/${lang}/qualites`}>{t.qualites}</Link></p>
+          <p><Link className="hover:underline" href={`/${lang}/longueurs`}>{t.longueurs}</Link></p>
           <p><Link className="hover:underline" href={`/${lang}/galerie`}>{getDict(lang).meta.galerie}</Link></p>
           <p><Link className="hover:underline" href={`/${lang}/suivi`}>{t.suivi}</Link></p>
           <p><Link className="hover:underline" href={`/${lang}/avis`}>{t.avis}</Link></p>

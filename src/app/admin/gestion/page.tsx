@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { adminConfigured, isAdmin } from "@/lib/auth";
+import { adminConfigured, currentAdmin } from "@/lib/auth";
 import { invoiceKeys, loadGestion } from "@/lib/gestion/store";
 import { storageReady } from "@/lib/store";
 import GestionApp from "@/components/gestion/GestionApp";
@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Gestion des ventes – Aurahair", robots: { index: false } };
 
 export default async function GestionPage() {
-  if (!adminConfigured() || !(await isAdmin())) return <LoginForm />;
+  const who = adminConfigured() ? await currentAdmin() : null;
+  if (!who) return <LoginForm />;
   let data;
   try {
     data = await loadGestion();
@@ -22,5 +23,5 @@ export default async function GestionPage() {
       </div>
     );
   }
-  return <GestionApp initial={data} initialKeys={invoiceKeys(data)} storageReady={storageReady()} />;
+  return <GestionApp initial={data} initialKeys={invoiceKeys(data)} storageReady={storageReady()} sessionPartner={who === "shared" ? undefined : who} />;
 }

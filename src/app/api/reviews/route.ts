@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { asLang, getDict } from "@/i18n";
 import { newReviewId } from "@/lib/order";
 import { notify } from "@/lib/notify";
+import { isOurPhoto } from "@/lib/photos";
 import { allow, clientIp } from "@/lib/ratelimit";
 import { saveReview } from "@/lib/store";
 
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
       rating: rating >= 1 && rating <= 5 ? rating : 5,
       lang,
       status: "pending",
+      ...(isOurPhoto(body.photo) ? { photo: body.photo } : {}),
     });
   } catch (e) {
     console.error("saveReview failed", e);
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
     subject: `Nouvel avis à valider : ${name}, ${city}`,
     title: "Nouvel avis cliente à valider",
     actor: "Une visiteuse du site",
-    rows: [["Prénom", name], ["Ville indiquée", city], ["Note", `${rating >= 1 && rating <= 5 ? rating : 5} sur 5`]],
+    rows: [["Prénom", name], ["Ville indiquée", city], ["Note", `${rating >= 1 && rating <= 5 ? rating : 5} sur 5`], ["Photo", isOurPhoto(body.photo) ? body.photo : "aucune"]],
     lines: [text],
     link: { label: "Publier ou supprimer dans l'admin", url: `${new URL(req.url).origin}/admin` },
   });

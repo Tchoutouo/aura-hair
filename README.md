@@ -28,6 +28,24 @@ Autres fonctions :
   les 3 derniers s'affichent sur l'accueil.
 - **FAQ** (`/fr/faq`) : textes dans `src/i18n/fr.ts` et `en.ts` (`faq`).
 
+Depuis novembre 2026 :
+
+- **Disponibles tout de suite** (`/fr/disponibles`) : les perruques en stock avec un prix visé (et cochées « visible
+  sur le site » dans la gestion), avec leur photo. « Je la réserve » la passe en « Réservée », prévient par e-mail
+  et ouvre WhatsApp. Les 4 premières s'affichent sur l'accueil.
+- **Photos** des articles (gestion) et des avis (clientes) dans Vercel Blob (store « aurahair-photos »).
+- **Guide des longueurs en 3D** (`/fr/longueurs`, three.js chargé seulement sur cette page).
+- **Liste d'attente** « Recevoir une alerte au prochain arrivage » : onglet dans l'admin.
+- **Prix en FCFA seulement** pour les clientes ; le taux du dollar reste interne.
+- **Résumé du matin** par e-mail vers 7 h (Vercel Cron, `vercel.json`, protégé par `CRON_SECRET`) avec la
+  sauvegarde complète des données en pièce jointe.
+- **Comptes personnels** : `ADMIN_PASSWORD_YVALTT` et `ADMIN_PASSWORD_LISA` (le mot de passe commun
+  `ADMIN_PASSWORD` reste valable ; ne le supprimez pas, il signe aussi les liens de facture).
+- **Export Excel** (CSV) depuis le tableau de bord de la gestion.
+- **Référencement** : `sitemap.xml`, `robots.txt`, données structurées « Store » sur l'accueil.
+- **Notifications par e-mail** (`NOTIFY_EMAIL`, Resend) : ventes, paiements, retours, commandes du site, avis,
+  réservations, liste d'attente, connexions.
+
 Tout se modifie dans `/admin` → *Prix fournisseurs* et *Réglages*.
 
 ## Gestion des ventes (`/admin/gestion`)

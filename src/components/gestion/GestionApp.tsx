@@ -32,23 +32,27 @@ export default function GestionApp({
   initial,
   initialKeys,
   storageReady,
+  sessionPartner,
 }: {
   initial: GestionData;
   initialKeys: Record<string, string>;
   storageReady: boolean;
+  /** Set when logged in with a personal password: then "Je suis" is not needed. */
+  sessionPartner?: Partner;
 }) {
   const [data, setData] = useState(initial);
   const [keys, setKeys] = useState(initialKeys);
   const [tab, setTab] = useState<Tab>("bord");
   const [intent, setIntent] = useState<Intent>(null);
-  const [me, setMe] = useState<Partner>("yvaltt");
+  const [me, setMe] = useState<Partner>(sessionPartner ?? "yvaltt");
 
   useEffect(() => {
+    if (sessionPartner) return;
     try {
       const saved = localStorage.getItem(ME_KEY);
       if (saved === "yvaltt" || saved === "lisa") setMe(saved);
     } catch {}
-  }, []);
+  }, [sessionPartner]);
   const chooseMe = (p: Partner) => {
     setMe(p);
     try {
@@ -91,20 +95,26 @@ export default function GestionApp({
             <h1 className="font-display text-3xl font-bold text-plum">Gestion des ventes</h1>
             <InstallButton className="mt-2" />
           </div>
-          <div role="group" aria-label="Qui utilise l'appli" className="flex items-center gap-2 text-sm">
-            <span className="text-muted">Je suis</span>
-            {PARTNERS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                aria-pressed={me === p}
-                onClick={() => chooseMe(p)}
-                className={`rounded-full px-3 py-1.5 font-semibold ${me === p ? "bg-plum text-gold-soft" : "border border-line bg-white text-plum"}`}
-              >
-                {PARTNER_NAMES[p]}
-              </button>
-            ))}
-          </div>
+          {sessionPartner ? (
+            <p className="text-sm text-muted">
+              Connexion : <strong className="text-plum">{PARTNER_NAMES[sessionPartner]}</strong>
+            </p>
+          ) : (
+            <div role="group" aria-label="Qui utilise l'appli" className="flex items-center gap-2 text-sm">
+              <span className="text-muted">Je suis</span>
+              {PARTNERS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  aria-pressed={me === p}
+                  onClick={() => chooseMe(p)}
+                  className={`rounded-full px-3 py-1.5 font-semibold ${me === p ? "bg-plum text-gold-soft" : "border border-line bg-white text-plum"}`}
+                >
+                  {PARTNER_NAMES[p]}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {!storageReady && (

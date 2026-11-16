@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Export from "./Export";
 import { Btn, Empty, F, Stat, useG } from "./ui";
 
 const pct = (x: number) => `${Math.round(x * 100)} %`;
@@ -185,6 +186,8 @@ export default function Dashboard() {
           </table>
         </div>
       </section>
+
+      <Export />
 
       {a.customers.length > 0 && (
         <section>

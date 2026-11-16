@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { fmtFcfa, fmtUsd } from "@/lib/pricing";
 import { CLOSURE_SIZES, LENGTHS, type Config, type PriceRow } from "@/lib/types";
-import type { Review, StoredOrder, StoredRequest } from "@/lib/store";
+import type { Review, StoredOrder, StoredRequest, WaitlistEntry } from "@/lib/store";
+import { waLink } from "@/lib/gestion/messages";
 import { STEPS, type Step, type Tracking } from "@/lib/tracking";
 
-type Tab = "orders" | "requests" | "reviews" | "prices" | "settings";
+type Tab = "orders" | "requests" | "reviews" | "waitlist" | "prices" | "settings";
 
 const STEP_LABELS: Record<Step, string> = {
   received: "Commande reçue",
@@ -66,6 +67,7 @@ const SUBJECTS: Record<StoredRequest["subject"], string> = {
   visa: "Visa Vietnam",
   exchange: "Change de devises",
   other: "Autre",
+  reservation: "Réservation d'une perruque disponible",
 };
 
 const input = "h-9 w-full rounded-md border border-line bg-white px-2 text-sm";
@@ -138,6 +140,7 @@ export default function AdminDashboard({
   requests,
   tracking,
   initialReviews,
+  initialWaitlist,
   storageReady,
 }: {
   initialConfig: Config;
@@ -145,9 +148,19 @@ export default function AdminDashboard({
   requests: StoredRequest[];
   tracking: Record<string, Tracking>;
   initialReviews: Review[];
+  initialWaitlist: WaitlistEntry[];
   storageReady: boolean;
 }) {
   const [reviews, setReviews] = useState(initialReviews);
+  const [waitlist, setWaitlist] = useState(initialWaitlist);
+
+  async function waitlistAction(id: string, action: "notified" | "reset" | "delete") {
+    if (action === "delete" && !window.confirm("Retirer cette personne de la liste ?")) return;
+    const res = await fetch("/api/admin/waitlist", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action }) });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) setWaitlist(data.waitlist);
+    else window.alert(data.error || "Erreur");
+  }
 
   async function moderate(id: string, action: "approve" | "delete") {
     if (action === "delete" && !window.confirm("Supprimer définitivement cet avis ?")) return;
@@ -218,6 +231,7 @@ export default function AdminDashboard({
             ["orders", `Commandes (${orders.length})`],
             ["requests", `Demandes (${requests.length})`],
             ["reviews", `Avis (${reviews.filter((r) => r.status === "pending").length} à valider)`],
+            ["waitlist", `Liste d'attente (${waitlist.filter((w) => !w.notifiedAt).length})`],
             ["prices", "Prix fournisseurs"],
             ["settings", "Réglages"],
           ] as [Tab, string][]
@@ -318,6 +332,58 @@ export default function AdminDashboard({
         </div>
       )}
 
+      {tab === "waitlist" && (
+        <div className="mt-6 space-y-3">
+          <p className="text-sm text-muted">
+            Les personnes qui veulent être prévenues du prochain arrivage. À l&apos;arrivée du colis, ouvrez WhatsApp pour chacune
+            avec le message prêt, puis cliquez sur « Message envoyé ».
+          </p>
+          {!waitlist.length && <p className="text-muted">Personne sur la liste pour l&apos;instant.</p>}
+          {waitlist.map((w) => (
+            <div key={w.id} className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line p-4 text-sm ${w.notifiedAt ? "bg-sand/60" : "bg-white"}`}>
+              <div>
+                <p className="font-semibold text-plum">
+                  {w.name} · {w.phone}
+                  {w.lang === "en" && <span className="ml-2 rounded-full border border-line px-2 py-0.5 text-xs">EN</span>}
+                </p>
+                <p className="text-xs text-muted">
+                  Inscription le {new Date(w.createdAt).toLocaleDateString("fr-FR")}
+                  {w.wish ? ` · cherche : ${w.wish}` : ""}
+                  {w.notifiedAt ? ` · message envoyé le ${new Date(w.notifiedAt).toLocaleDateString("fr-FR")}` : ""}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href={waLink(
+                    w.phone,
+                    w.lang === "en"
+                      ? `Hello ${w.name}, it's Aurahair! Our new parcel from Vietnam has arrived. Want to see the wigs available?`
+                      : `Bonjour ${w.name}, c'est Aurahair ! Notre nouveau colis du Vietnam est arrivé. Voulez-vous voir les perruques disponibles ?`,
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-whatsapp px-4 py-2 font-semibold text-white"
+                >
+                  Prévenir sur WhatsApp
+                </a>
+                {w.notifiedAt ? (
+                  <button onClick={() => waitlistAction(w.id, "reset")} className="text-plum underline">
+                    Remettre à prévenir
+                  </button>
+                ) : (
+                  <button onClick={() => waitlistAction(w.id, "notified")} className="text-plum underline">
+                    Message envoyé
+                  </button>
+                )}
+                <button onClick={() => waitlistAction(w.id, "delete")} className="text-wine underline">
+                  Retirer
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {tab === "reviews" && (
         <div className="mt-6 space-y-3">
           {!reviews.length && <p className="text-muted">Aucun avis pour l&apos;instant.</p>}
@@ -334,6 +400,12 @@ export default function AdminDashboard({
                 <p className="text-xs text-muted">{new Date(r.createdAt).toLocaleString("fr-FR")}</p>
               </div>
               <p className="mt-2 whitespace-pre-wrap text-sm">{r.text}</p>
+              {r.photo && (
+                <a href={r.photo} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={r.photo} alt={`Photo envoyée par ${r.name}`} className="h-32 w-32 rounded-lg object-cover" />
+                </a>
+              )}
               <div className="mt-3 flex gap-3 text-sm">
                 {r.status === "pending" && (
                   <button onClick={() => moderate(r.id, "approve")} className="rounded-full bg-plum px-4 py-1.5 font-semibold text-gold-soft">

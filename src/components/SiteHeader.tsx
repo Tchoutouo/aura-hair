@@ -13,9 +13,10 @@ export default function SiteHeader({ lang }: { lang: Lang }) {
           <Image src="/logo.png" alt="Aurahair Extension Co." width={438} height={257} className="h-12 w-auto mix-blend-multiply" priority />
         </Link>
         <nav className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-sm font-medium text-muted">
-          <Link href={`/${lang}/textures`} className={`hidden md:inline ${link}`}>{t.textures}</Link>
+          <Link href={`/${lang}/disponibles`} className={`hidden sm:inline font-semibold text-plum ${link}`}>{t.dispo}</Link>
+          <Link href={`/${lang}/textures`} className={`hidden lg:inline ${link}`}>{t.textures}</Link>
           <Link href={`/${lang}/qualites`} className={`hidden md:inline ${link}`}>{t.qualites}</Link>
-          <Link href={`/${lang}/galerie`} className={`hidden md:inline ${link}`}>{t.galerie}</Link>
+          <Link href={`/${lang}/galerie`} className={`hidden lg:inline ${link}`}>{t.galerie}</Link>
           <Link href={`/${lang}/suivi`} className={`hidden sm:inline ${link}`}>{t.suivi}</Link>
           <Link href={`/${lang}/contact`} className={`hidden lg:inline ${link}`}>{t.contact}</Link>
           <LangSwitch lang={lang} title={t.switchLabel} />

@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { getDict, type Lang } from "@/i18n";
+import PhotoUpload from "./PhotoUpload";
 
 export default function ReviewForm({ lang }: { lang: Lang }) {
   const t = getDict(lang).reviews;
   const [form, setForm] = useState({ name: "", city: "", text: "" });
   const [rating, setRating] = useState(5);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [status, setStatus] = useState<{ state: "idle" | "sending" | "done" | "error"; msg?: string }>({ state: "idle" });
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -18,12 +20,13 @@ export default function ReviewForm({ lang }: { lang: Lang }) {
     const res = await fetch("/api/reviews", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, rating, lang }),
+      body: JSON.stringify({ ...form, rating, lang, photo: photos[0] }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
       setStatus({ state: "done" });
       setForm({ name: "", city: "", text: "" });
+      setPhotos([]);
     } else setStatus({ state: "error", msg: data.error });
   }
 
@@ -62,6 +65,11 @@ export default function ReviewForm({ lang }: { lang: Lang }) {
         <span className="font-medium text-ink">{t.text} *</span>
         <textarea required rows={4} maxLength={1000} value={form.text} onChange={set("text")} placeholder={t.textHint} className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2" />
       </label>
+      <div className="text-sm">
+        <p className="font-medium text-ink">{t.photo}</p>
+        <p className="mb-2 text-xs text-muted">{t.photoHint}</p>
+        <PhotoUpload kind="review" value={photos} onChange={setPhotos} max={1} labels={t.photoLabels} />
+      </div>
       <button disabled={status.state === "sending"} className="w-full rounded-full bg-plum px-6 py-3 font-semibold text-gold-soft hover:bg-plum-2 disabled:opacity-50">
         {status.state === "sending" ? t.sending : t.submit}
       </button>

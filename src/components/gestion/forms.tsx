@@ -22,6 +22,7 @@ import {
   type Tranche,
   type Transfer,
 } from "@/lib/gestion/types";
+import PhotoUpload from "../PhotoUpload";
 import { Btn, F, Field, FormFooter, Modal, input, useG } from "./ui";
 
 function useSubmit(run: () => Promise<unknown>, done: () => void) {
@@ -183,9 +184,11 @@ export function ItemForm({ item, onClose }: { item: Item; onClose: () => void })
     status: item.status,
     note: item.note ?? "",
   });
+  const [photos, setPhotos] = useState(item.photos ?? []);
+  const [online, setOnline] = useState(item.online !== false);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
   const { busy, error, submit } = useSubmit(
-    () => call("item.save", { item: { ...f, id: item.id, costUsd: num(f.costUsd), price: num(f.price), minPrice: num(f.minPrice) } }),
+    () => call("item.save", { item: { ...f, id: item.id, costUsd: num(f.costUsd), price: num(f.price), minPrice: num(f.minPrice), photos, online } }),
     onClose,
   );
   const del = useSubmit(async () => {
@@ -219,6 +222,18 @@ export function ItemForm({ item, onClose }: { item: Item; onClose: () => void })
         <Field label="Note" className="sm:col-span-2" hint="Par exemple : réservée par Awa, montée au Cameroun, offerte…">
           <input value={f.note} onChange={set("note")} className={input} />
         </Field>
+        <div className="sm:col-span-2">
+          <p className="text-sm font-medium text-ink">Photos (4 au maximum)</p>
+          <p className="mb-2 text-xs text-muted">La première s&apos;affiche sur la page « Disponibles tout de suite » du site.</p>
+          <PhotoUpload kind="item" value={photos} onChange={setPhotos} />
+        </div>
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" checked={online} onChange={(e) => setOnline(e.target.checked)} className="mt-1" />
+          <span>
+            Visible sur le site quand elle est en stock
+            <span className="block text-xs text-muted">Il faut aussi un prix de vente visé pour qu&apos;elle apparaisse.</span>
+          </span>
+        </label>
         <div className="sm:col-span-2">
           <FormFooter
             busy={busy || del.busy}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { Analytics } from "@vercel/analytics/next";
 import { getDict, isLang, LANGS } from "@/i18n";
+import { siteUrl } from "@/lib/site";
 import { getConfig } from "@/lib/store";
 import SiteFooter from "@/components/SiteFooter";
 import ShipBanner from "@/components/ShipBanner";
@@ -43,13 +44,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     appleWebApp: { capable: true, title: "Aurahair", statusBarStyle: "default" },
     icons: { apple: "/icons/site-apple-180.png" },
   };
-}
-
-/** Public address of the site, for absolute preview-image URLs. */
-function siteUrl(): string {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-  return "http://localhost:3000";
 }
 
 export default async function LangLayout({ children, params }: Props) {
